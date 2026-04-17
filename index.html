@@ -229,7 +229,6 @@
       line-height: 1.6;
     }
 
-    /* 압축된 로비 그리드 레이아웃 */
     .lobby-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -288,7 +287,6 @@
       min-height: 60px;
     }
 
-    /* 나란히 배치되는 액션 버튼 행 */
     .action-row {
       display: flex;
       gap: 10px;
@@ -391,15 +389,13 @@
       100% { opacity: 0.6; }
     }
 
-    /* 모바일 세로/가로 환경 완벽 대응 */
     @media (max-width: 768px) {
       .topbar { top: 10px; left: 10px; right: 10px; flex-direction: column; }
       .badge { font-size: 12px; padding: 6px 10px; }
       .progress-wrap { width: 100%; min-width: 150px; padding: 10px; }
       .hint { bottom: max(15px, env(safe-area-inset-bottom)); }
-      .card { padding: 20px; width: 92vw; }
+      .card { padding: 20px; width: 92vw; max-height: 85vh; overflow-y: auto; }
       .title { font-size: 28px; }
-      /* 모바일에서는 세로 공간 확보를 위해 서브타이틀 및 조작법 숨김 */
       .hide-mobile { display: none !important; }
       .lobby-grid { gap: 10px; margin-bottom: 12px; }
       .lobby-input, .lobby-select { padding: 10px; font-size: 14px; }
@@ -407,7 +403,7 @@
     }
 
     @media (max-height: 600px) and (orientation: landscape) {
-      .card { padding: 16px 24px; }
+      .card { padding: 16px 24px; max-height: 90vh; overflow-y: auto; }
       .hide-mobile { display: none !important; }
       .lobby-grid { gap: 8px; margin-bottom: 8px; }
       .lobby-input, .lobby-select { padding: 8px; }
@@ -432,8 +428,8 @@
 
           <div class="panel progress-wrap">
             <div class="progress-head">
-              <span>Progress</span>
-              <span id="progressText" style="color: var(--neon-cyan)">0%</span>
+              <span>LEVEL</span>
+              <span id="progressText" style="color: var(--neon-cyan)">LV 1</span>
             </div>
             <div class="progress-bar">
               <div class="progress-fill" id="progressFill"></div>
@@ -453,10 +449,9 @@
 
         <div id="center-overlay">
           
-          <!-- 통합 LOBBY (스크롤 방지 압축 레이아웃) -->
           <div id="setupCard" class="card">
             <h1 class="title">NEON PULSE</h1>
-            <p class="subtitle hide-mobile">자신만의 캐릭터를 커스텀하고 게임을 시작하세요!</p>
+            <p class="subtitle hide-mobile">자신만의 캐릭터를 커스텀하고 끝없이 달려보세요!</p>
             
             <div class="lobby-grid">
                 <div class="input-group span-2">
@@ -488,16 +483,15 @@
             <div class="controls-note hide-mobile">
               PC: <b>Space / Click / ↑</b> &nbsp;&nbsp;|&nbsp;&nbsp; Mobile: <b>화면 터치</b><br>
               공중에서 한 번 더 누르면 <b>다단 점프</b> (R 재시작 / P 일시정지)<br>
-              <span style="color:#aaa;">비행 아이템은 획득 후 누르고 있어야 상승합니다.</span>
+              <span style="color:#aaa;">희귀 패턴: 별의 파도, 대시 돌파, 포탈 러시, 비행 터널이 등장합니다!</span>
             </div>
 
             <button id="muteBtn" class="sound-toggle">🔊 Sound: ON</button>
           </div>
 
-          <!-- RESULT SCREEN -->
           <div id="resultCard" class="card hidden">
             <h2 class="title" id="resultTitle">SYSTEM FAILED</h2>
-            <p class="subtitle hide-mobile" id="resultText">진행도: 42%</p>
+            <p class="subtitle hide-mobile" id="resultText">Score: 0</p>
             <div class="rank-text" id="resultRank">Rank: #??? (Top ?%)</div>
             <div class="action-row" style="margin-top: 20px;">
               <button id="retryBtn" class="action-btn btn-start">RETRY</button>
@@ -523,7 +517,7 @@
         width: 1280, height: 720, groundY: 580, playerX: 250,
         gravity: 3040, jumpForce: 980, flightForce: 6500, maxFallSpeed: 2000,
         coyoteTime: 0.12, baseSpeed: 500, maxSpeed: 1200, speedAccel: 15,
-        worldLength: 16000, deathDelay: 0.6, clearDelay: 1.0, dprMax: 2,
+        deathDelay: 0.6, clearDelay: 1.0, dprMax: 2,
       };
 
       // ==========================================
@@ -566,7 +560,7 @@
 
       const game = {
         state: 'setup', 
-        attempts: 1, progress: 0, score: 0, stars: 0,
+        attempts: 1, score: 0, stars: 0,
         timer: 0, muted: false, flash: 0, shakeTime: 0, shakeMag: 0, audioInit: false,
       };
 
@@ -738,7 +732,7 @@
       function drawPreview() {
         pCtx.clearRect(0, 0, 60, 60);
         pCtx.save();
-        pCtx.translate(30, 30); // 60x60 캔버스의 정중앙
+        pCtx.translate(30, 30); 
         
         const coreColor = CUSTOM_COLORS[playerDesign.colorName];
 
@@ -771,10 +765,6 @@
         UI.setupCard.classList.remove('hidden');
       }
 
-      function showMenu() {
-        showSetup(); // 메인 메뉴를 건너뛰고 바로 셋업(통합 로비)으로 진입
-      }
-
       function startGame() {
         playerDesign.nickname = UI.nickname.value.trim() || "PLAYER";
         playerDesign.colorName = UI.colorSel.value;
@@ -788,16 +778,14 @@
       }
 
       // ==========================================
-      // 4. DYNAMIC LEVEL GENERATION
+      // 4. DYNAMIC LEVEL GENERATION (RARE PATTERNS ADDED)
       // ==========================================
       const spike = (x, flip=false, w=40, h=40) => ({ type: flip ? 'spike_down' : 'spike', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#f0f', fatalHit: false });
       const ceilSpike = (x, w=40, h=40) => ({ type: 'spike_down', x, y: 50, w, h, color: '#f0f', fatalHit: false }); 
       const block = (x, flip=false, w=50, h=60) => ({ type: 'block', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#0ff', fatalHit: false });
       const ceilBlock = (x, w=50, h=60) => ({ type: 'block', x, y: 50, w, h, color: '#0ff', fatalHit: false }); 
       const superBlock = (x, flip=false, h=160) => ({ type: 'block', x, y: flip ? 50 : CONFIG.groundY - h, w: 50, h, color: '#b026ff', fatalHit: false });
-      
       const plat = (x, y, w=180) => ({ type: 'platform', x, y, w, h: 20, color: '#39ff14', fatalHit: false });
-      
       const orb = (x, y) => ({ type: 'orb', x, y, r: 24, w: 48, h: 48, used: false, color: '#ffea00' });
       const flightItem = (x, y) => ({ type: 'item_flight', x, y, r: 30, w: 60, h: 60, used: false, color: '#ffea00' });
       const rhombus = (x, flip=false, size=60) => ({ type: 'rhombus', x, y: flip ? 50 : CONFIG.groundY - size, w: size, h: size, color: '#ff0055', fatalHit: false });
@@ -813,89 +801,96 @@
         const doubleJumpGap = 1050;
         let nextX = cx;
 
-        if (index === 0) {
-            list.push(spike(nextX, false)); nextX += baseGap;
-            list.push(spike(nextX, false)); list.push(star(nextX + 10, CONFIG.groundY - 100)); nextX += baseGap;
-            list.push(block(nextX, false, 80, 50)); nextX += baseGap;
-            list.push(superBlock(nextX, false, 160)); nextX += doubleJumpGap;
-        }
-        else if (index === 1) {
-            list.push(orbDash(nextX, CONFIG.groundY - 120)); 
-            list.push(glassWall(nextX + 250, false, 200)); 
-            list.push(star(nextX + 300, CONFIG.groundY - 100)); nextX += doubleJumpGap;
-        }
-        else if (index === 2) {
-            list.push(portalGrav(nextX, CONFIG.groundY - 150, 'up')); nextX += baseGap;
-            list.push(spike(nextX, false)); 
-            list.push(spike(nextX, true));  
-            list.push(star(nextX, 150)); 
+        const rand = Math.random();
+        const mF = isFlipped;  
+        const sF = !isFlipped; 
+        
+        if (rand < 0.12) {
+            list.push(spike(nextX, mF)); list.push(spike(nextX + 40, mF));
+            list.push(star(nextX + 20, mF ? 130 : CONFIG.groundY - 130)); 
+            nextX += baseGap;
+        } else if (rand < 0.24) {
+            list.push(rhombus(nextX, mF, 60 + Math.random()*20)); nextX += baseGap;
+        } else if (rand < 0.36) {
+            list.push(orbDash(nextX, mF ? 140 : CONFIG.groundY - 140));
+            list.push(glassWall(nextX + 300, mF, 250));
             nextX += doubleJumpGap;
-            list.push(portalGrav(nextX, 50, 'down')); nextX += baseGap;
-        }
-        else if (index === 3) {
-            list.push(flightItem(nextX, CONFIG.groundY - 150)); nextX += 800; 
-            for (let i=0; i<4; i++) {
-                list.push(spike(nextX, false, 150, 40)); 
-                if (i > 0) list.push(spike(nextX, true, 150, 40)); 
-                
-                if (i%2 === 1) { 
-                    list.push(trap(nextX + 40, false, 70, 140)); 
-                    list.push(trap(nextX + 40, true, 70, 140)); 
-                } else { 
-                    list.push(plat(nextX + 50, CONFIG.groundY - 260, 180)); 
-                    list.push(star(nextX + 130, CONFIG.groundY - 310));
-                }
+        } else if (rand < 0.50) {
+            list.push(portalGrav(nextX, mF ? 50 : CONFIG.groundY - 100, mF ? 'down' : 'up')); nextX += baseGap;
+            list.push(block(nextX, sF, 50, 80));
+            list.push(star(nextX + 25, sF ? 140 : CONFIG.groundY - 140));
+            nextX += doubleJumpGap;
+            list.push(portalGrav(nextX, sF ? 50 : CONFIG.groundY - 100, sF ? 'down' : 'up')); nextX += baseGap;
+            list.push(spike(nextX, mF)); nextX += baseGap;
+        } else if (rand < 0.65) {
+            list.push(superBlock(nextX, mF, 200 + Math.random()*60)); 
+            list.push(star(nextX + 5, mF ? 300 : CONFIG.groundY - 300));
+            nextX += doubleJumpGap;
+        } else if (rand < 0.75) {
+            list.push(trap(nextX, mF, 80, 80)); 
+            list.push(plat(nextX + 120, mF ? 140 : CONFIG.groundY - 140, 180));
+            list.push(spike(nextX + 150, mF)); 
+            nextX += doubleJumpGap;
+        } else if (rand < 0.85) {
+            list.push(flightItem(nextX, mF ? 100 : CONFIG.groundY - 100)); nextX += 800; 
+            const flightLen = 2 + Math.floor(Math.random() * 2);
+            for (let j = 0; j < flightLen; j++) {
+                list.push(spike(nextX, mF, 200, 50));
+                if (j > 0) list.push(trap(nextX + 50, mF, 100, 160));
                 nextX += 600; 
             }
-            nextX += baseGap; 
-        }
-        else {
-            const rand = Math.random();
-            const mF = isFlipped;  
-            const sF = !isFlipped; 
+            nextX += baseGap;
+        } else {
+            // ==========================================
+            // RARE PATTERNS (15% Chance) - 특별 희귀 구간
+            // ==========================================
+            const rareType = Math.random();
             
-            if (rand < 0.15) {
-                list.push(spike(nextX, mF)); list.push(spike(nextX + 40, mF));
-                list.push(star(nextX + 20, mF ? 130 : CONFIG.groundY - 130)); 
+            if (rareType < 0.25) {
+                // 1. 보너스 스타 라인 (Star Wave)
+                for(let i=0; i<12; i++) {
+                    const yOffset = Math.sin(i * 0.6) * 120;
+                    list.push(star(nextX, (mF ? 200 : CONFIG.groundY - 200) + yOffset));
+                    nextX += 150;
+                }
                 nextX += baseGap;
-            } else if (rand < 0.30) {
-                list.push(rhombus(nextX, mF, 60 + Math.random()*20)); nextX += baseGap;
-            } else if (rand < 0.45) {
-                list.push(orbDash(nextX, mF ? 140 : CONFIG.groundY - 140));
-                list.push(glassWall(nextX + 300, mF, 250));
-                nextX += doubleJumpGap;
-            } else if (rand < 0.65) {
-                list.push(portalGrav(nextX, mF ? 50 : CONFIG.groundY - 100, mF ? 'down' : 'up')); nextX += baseGap;
-                list.push(block(nextX, sF, 50, 80));
-                list.push(star(nextX + 25, sF ? 140 : CONFIG.groundY - 140));
-                nextX += doubleJumpGap;
-                list.push(portalGrav(nextX, sF ? 50 : CONFIG.groundY - 100, sF ? 'down' : 'up')); nextX += baseGap;
-                list.push(spike(nextX, mF)); nextX += baseGap;
-            } else if (rand < 0.80) {
-                list.push(superBlock(nextX, mF, 200 + Math.random()*60)); 
-                list.push(star(nextX + 5, mF ? 300 : CONFIG.groundY - 300));
-                nextX += doubleJumpGap;
-            } else if (rand < 0.90) {
-                list.push(trap(nextX, mF, 80, 80)); 
-                list.push(plat(nextX + 120, mF ? 140 : CONFIG.groundY - 140, 180));
-                list.push(spike(nextX + 150, mF)); 
-                nextX += doubleJumpGap;
+            } else if (rareType < 0.50) {
+                // 2. 대시 돌파 러시 (Dash Break Rush)
+                for(let i=0; i<5; i++) {
+                    list.push(orbDash(nextX, mF ? 140 : CONFIG.groundY - 140));
+                    list.push(glassWall(nextX + 300, mF, 250));
+                    nextX += 650;
+                }
+                nextX += baseGap;
+            } else if (rareType < 0.75) {
+                // 3. 포탈 러시 (Portal Zig-Zag)
+                let curF = mF;
+                for(let i=0; i<5; i++) {
+                    list.push(portalGrav(nextX, curF ? 50 : CONFIG.groundY - 100, curF ? 'down' : 'up'));
+                    list.push(star(nextX + 300, CONFIG.height / 2));
+                    curF = !curF;
+                    nextX += 600;
+                }
+                nextX += baseGap;
             } else {
-                list.push(flightItem(nextX, mF ? 100 : CONFIG.groundY - 100)); nextX += 800; 
-                const flightLen = 2 + Math.floor(Math.random() * 2);
-                for (let j = 0; j < flightLen; j++) {
-                    list.push(spike(nextX, mF, 200, 50));
-                    if (j > 0) list.push(trap(nextX + 50, mF, 100, 160));
-                    nextX += 600; 
+                // 4. 비행 터널 (Dangerous Flight Tunnel)
+                list.push(flightItem(nextX, mF ? 150 : CONFIG.groundY - 150)); nextX += 800;
+                for(let i=0; i<5; i++) {
+                    list.push(spike(nextX, false, 200, 100)); // 바닥 가시
+                    list.push(spike(nextX, true, 200, 100));  // 천장 가시
+                    list.push(star(nextX + 100, CONFIG.height / 2));
+                    nextX += 500;
                 }
                 nextX += baseGap;
             }
+            return { items: list, nextX: nextX }; // 희귀 패턴일 때는 반대편 잡동사니 생성 스킵
+        }
 
-            if (Math.random() < 0.5) {
-                const subX = cx + Math.random() * (nextX - cx - 150);
-                if (Math.random() < 0.5) list.push(spike(subX, sF));
-                else list.push(block(subX, sF, 40, 40));
-            }
+        // 일반 패턴일 때 반대편 빈 공간 채우기
+        if (Math.random() < 0.5) {
+            const subX = cx + Math.random() * (nextX - cx - 150);
+            if (Math.random() < 0.5) list.push(spike(subX, sF));
+            else list.push(block(subX, sF, 40, 40));
         }
         
         return { items: list, nextX: nextX };
@@ -918,7 +913,6 @@
       // ==========================================
       function resetRun(incrementAttempt = false) {
         if (incrementAttempt) game.attempts++;
-        game.progress = 0;
         game.score = 0;
         game.stars = 0;
         game.flash = 0;
@@ -960,43 +954,39 @@
         updateProgress();
       }
 
-      function showResult(isClear) {
-        game.state = isClear ? 'clear' : 'dead';
-        game.timer = isClear ? CONFIG.clearDelay : CONFIG.deathDelay;
-        game.flash = isClear ? 0.8 : 1;
+      function showResult() {
+        game.state = 'dead';
+        game.timer = CONFIG.deathDelay;
+        game.flash = 1;
         
         const coreColor = CUSTOM_COLORS[playerDesign.colorName];
 
-        if (!isClear) {
-            triggerShake(20, 0.4);
-            createExplosion(player.x + player.w/2, player.y + player.h/2, coreColor);
-            playSound(100, 0.3, 'sawtooth', 0.1); 
-        } else {
-            game.progress = 100;
-            playSound(600, 0.1, 'square', 0.05);
-            setTimeout(() => playSound(800, 0.2, 'square', 0.05), 100);
-        }
+        triggerShake(20, 0.4);
+        createExplosion(player.x + player.w/2, player.y + player.h/2, coreColor);
+        playSound(100, 0.3, 'sawtooth', 0.1); 
 
         const finalScore = game.score;
         const rankNum = Math.max(1, 10000 - Math.floor(finalScore / 10)); 
-        const topPct = Math.max(0.1, (rankNum / 10000) * 100).toFixed(1);
+        const topPct = Math.max(0.01, (rankNum / 10000) * 100).toFixed(2);
 
-        UI.resTitle.textContent = isClear ? 'STAGE CLEARED' : 'SYSTEM FAILED';
-        UI.resTitle.style.backgroundImage = isClear ? 'linear-gradient(to right, #39ff14, #00ffff)' : 'linear-gradient(to right, #ff0055, #ff00ff)';
-        UI.resTitle.style.filter = isClear ? 'drop-shadow(0 0 8px rgba(0, 255, 255, 0.4))' : 'drop-shadow(0 0 8px rgba(255, 0, 255, 0.4))';
+        UI.resTitle.textContent = 'SYSTEM FAILED';
+        UI.resTitle.style.backgroundImage = 'linear-gradient(to right, #ff0055, #ff00ff)';
+        UI.resTitle.style.filter = 'drop-shadow(0 0 8px rgba(255, 0, 255, 0.4))';
         
-        UI.resText.innerHTML = `Player: <b>${playerDesign.nickname}</b><br>Progress: ${game.progress.toFixed(0)}%<br>Score: ${finalScore}<br>Stars: ${game.stars}`;
+        UI.resText.innerHTML = `Player: <b>${playerDesign.nickname}</b><br>Score: ${finalScore}<br>Stars: ${game.stars}`;
         UI.resRank.textContent = `Rank: #${rankNum} (Top ${topPct}%)`;
         UI.resultCard.classList.remove('hidden');
       }
 
       function updateProgress() {
-        const val = Math.max(0, Math.min(100, (world.scrollX / CONFIG.worldLength) * 100));
-        game.progress = val;
-        UI.progText.textContent = `${val.toFixed(0)}%`;
-        UI.progFill.style.width = `${val}%`;
+        const speedRatio = Math.max(0, Math.min(1, (world.speed - CONFIG.baseSpeed) / (CONFIG.maxSpeed - CONFIG.baseSpeed)));
+        const currentLevel = Math.floor(speedRatio * 9) + 1; 
+        const percentToNext = (speedRatio * 9 % 1) * 100;
+        
+        UI.progText.textContent = `LV ${currentLevel}`;
+        UI.progFill.style.width = currentLevel >= 10 ? `100%` : `${percentToNext}%`;
 
-        if (game.progress >= 50 && player.jumpLevel < 3) {
+        if (game.score >= 3000 && player.jumpLevel < 3) {
             player.jumpLevel = 3;
             player.maxJumps = 3;
             updateUIJump(3, '#ff0055');
@@ -1284,7 +1274,7 @@
                        playSound(200, 0.15, 'square', 0.1); triggerShake(8, 0.1); continue;
                    } else {
                        ob.fatalHit = true;
-                       showResult(false); break;
+                       showResult(); break;
                    }
                }
             }
@@ -1298,7 +1288,7 @@
                const hitbox = getHitbox(ob, sx);
                if (checkCollision(pRect, hitbox)) {
                  ob.fatalHit = true;
-                 showResult(false); break;
+                 showResult(); break;
                }
             }
         }
@@ -1377,7 +1367,7 @@
         updateEffects(dt);
 
         if (game.state === 'playing') {
-          while (world.lastGenX < world.scrollX + CONFIG.width + 1500 && world.lastGenX < CONFIG.worldLength) {
+          while (world.lastGenX < world.scrollX + CONFIG.width + 1500) {
               const chunk = generateNextChunk(world.lastGenX, player.gravityFlipped, world.chunkIndex);
               world.obstacles.push(...chunk.items);
               world.lastGenX = chunk.nextX;
@@ -1409,10 +1399,6 @@
           checkWorldCollisions(dt);
           updateTrail(dt);
           updateProgress();
-          
-          if (world.scrollX >= CONFIG.worldLength && game.state === 'playing') {
-             showResult(true);
-          }
 
         } else if (game.state === 'dead' || game.state === 'clear') {
           game.timer -= dt;
@@ -1683,7 +1669,7 @@
 
       function drawStateTint() {
         if (game.flash <= 0) return;
-        ctx.fillStyle = game.state === 'clear' ? 'rgba(57, 255, 20, 1)' : 'rgba(255, 0, 85, 1)';
+        ctx.fillStyle = 'rgba(255, 0, 85, 1)';
         ctx.globalAlpha = game.flash * 0.3;
         ctx.fillRect(0, 0, CONFIG.width, CONFIG.height);
         ctx.globalAlpha = 1;
@@ -1720,7 +1706,7 @@
 
       function handlePress() {
         input.pressed = true; input.justPressed = true; tryUnlockAudio();
-        if (game.state === 'menu') startGame();
+        if (game.state === 'setup' || game.state === 'menu') startGame(); // 셋업 창에서도 화면 터치/스페이스바 누르면 게임 시작
         else if (game.state === 'dead' || game.state === 'clear') { resetRun(true); UI.resultCard.classList.add('hidden'); game.state = 'playing'; }
       }
 
@@ -1758,7 +1744,7 @@
       UI.btnRandom.addEventListener('click', randomizeDesign);
       UI.btnStart.addEventListener('click', () => { tryUnlockAudio(); startGame(); });
       UI.btnRetry.addEventListener('click', () => { tryUnlockAudio(); UI.resultCard.classList.add('hidden'); resetRun(true); game.state = 'playing'; });
-      UI.btnMenu.addEventListener('click', () => { resetRun(false); showMenu(); });
+      UI.btnMenu.addEventListener('click', () => { resetRun(false); showSetup(); }); // 통합된 로비 화면으로 이동하도록 수정
       UI.btnMute.addEventListener('click', () => {
         game.muted = !game.muted; UI.btnMute.textContent = `🔊 SOUND: ${game.muted ? 'OFF' : 'ON'}`;
       });
