@@ -191,10 +191,10 @@
     }
 
     .card {
-      width: min(90vw, 480px);
+      width: min(90vw, 600px);
       padding: 32px;
       border-radius: 16px;
-      background: linear-gradient(145deg, rgba(20, 20, 30, 0.8), rgba(10, 10, 15, 0.9));
+      background: linear-gradient(145deg, rgba(20, 20, 30, 0.85), rgba(10, 10, 15, 0.95));
       border: 1px solid rgba(0, 255, 255, 0.3);
       box-shadow: 0 0 40px rgba(0, 255, 255, 0.1), inset 0 0 20px rgba(255, 0, 255, 0.05);
       backdrop-filter: blur(12px);
@@ -216,7 +216,7 @@
       line-height: 1.1;
       text-transform: uppercase;
       letter-spacing: 2px;
-      background: linear-gradient(to right, var(--neon-cyan), var(--neon-pink));
+      background-image: linear-gradient(to right, var(--neon-cyan), var(--neon-pink));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       filter: drop-shadow(0 0 8px rgba(255, 0, 255, 0.4));
@@ -227,18 +227,111 @@
       color: var(--muted);
       font-size: 15px;
       line-height: 1.6;
-      white-space: pre-wrap;
+    }
+
+    .lobby-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      text-align: left;
+      margin-bottom: 20px;
+    }
+
+    .lobby-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-group label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .lobby-input, .lobby-select {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-radius: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .lobby-input:focus, .lobby-select:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+    }
+    
+    .lobby-select option {
+      background: #111a35;
+      color: #fff;
+    }
+
+    .random-btn {
+      flex: 1;
+      background: linear-gradient(135deg, #79f7ff, #00d2ff);
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 16px;
+      text-transform: uppercase;
+      cursor: pointer;
+      min-height: 100px;
+      transition: all 0.2s;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+
+    .random-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+      filter: brightness(1.1);
+    }
+
+    .preview-box {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      min-height: 100px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preview-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      display: grid;
+      place-items: center;
     }
 
     .controls-note {
-      margin: 20px 0;
+      margin: 0;
       padding: 16px;
       border-radius: 8px;
       background: rgba(0, 0, 0, 0.4);
       border: 1px dashed rgba(255, 255, 255, 0.2);
       color: #cbd5e1;
-      font-size: 14px;
-      line-height: 1.7;
+      font-size: 13px;
+      line-height: 1.6;
       text-align: left;
     }
 
@@ -249,13 +342,35 @@
       gap: 12px;
       justify-content: center;
       flex-wrap: wrap;
-      margin-top: 24px;
+      margin-top: 20px;
     }
 
-    button {
+    .primary-btn {
       appearance: none;
       border: 0;
-      border-radius: 8px;
+      border-radius: 12px;
+      padding: 14px 32px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      color: #000;
+      background: linear-gradient(135deg, #79f7ff, #00d2ff);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+      transition: all 0.15s ease;
+    }
+
+    .primary-btn:hover {
+      box-shadow: 0 0 25px var(--neon-cyan);
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+    .primary-btn:active { transform: translateY(1px); }
+
+    .secondary-btn {
+      appearance: none;
       padding: 14px 24px;
       font-family: 'Outfit', sans-serif;
       font-size: 16px;
@@ -263,50 +378,15 @@
       text-transform: uppercase;
       letter-spacing: 1px;
       cursor: pointer;
-      color: #000;
-      background: var(--neon-cyan);
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+      color: var(--text);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
       transition: all 0.15s ease;
     }
-
-    button:hover {
-      background: #fff;
-      box-shadow: 0 0 25px var(--neon-cyan);
-      transform: translateY(-2px);
-    }
-    button:active { transform: translateY(1px); }
-
-    .secondary {
-      color: var(--text);
-      background: transparent;
-      border: 2px solid var(--neon-pink);
-      box-shadow: 0 0 10px rgba(255, 0, 255, 0.2);
-    }
-    .secondary:hover {
-      background: rgba(255, 0, 255, 0.1);
-      box-shadow: 0 0 20px rgba(255, 0, 255, 0.4);
+    .secondary-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
       color: #fff;
-    }
-
-    #nicknameInput {
-      width: 100%;
-      padding: 14px;
-      margin-bottom: 10px;
-      background: rgba(0, 0, 0, 0.5);
-      border: 1px solid var(--neon-cyan);
-      color: #fff;
-      border-radius: 8px;
-      font-family: 'Outfit', sans-serif;
-      font-size: 18px;
-      font-weight: 600;
-      text-align: center;
-      outline: none;
-      box-shadow: inset 0 0 10px rgba(0,255,255,0.1);
-      transition: all 0.3s;
-    }
-    #nicknameInput:focus {
-      box-shadow: 0 0 15px rgba(0,255,255,0.4), inset 0 0 10px rgba(0,255,255,0.2);
-      border-color: #fff;
     }
 
     .rank-text {
@@ -347,8 +427,10 @@
       .progress-wrap { width: 100%; min-width: 150px; padding: 10px; }
       .hint { bottom: max(15px, env(safe-area-inset-bottom)); }
       .card { padding: 24px; }
-      .title { font-size: 32px; }
-      button { width: 100%; }
+      .lobby-grid { grid-template-columns: 1fr; gap: 12px; }
+      .random-btn { min-height: 60px; }
+      .preview-box { min-height: 120px; }
+      .primary-btn, .secondary-btn { width: 100%; }
     }
   </style>
 </head>
@@ -392,16 +474,48 @@
           
           <!-- LOBBY : PLAYER SETUP -->
           <div id="setupCard" class="card">
-            <h1 class="title">PLAYER SETUP</h1>
-            <p class="subtitle">캐릭터 디자인과 닉네임을 설정하세요.</p>
+            <h1 class="title">Neon Pulse</h1>
+            <p class="subtitle">대규모 시스템 업데이트가 적용된 확장 버전입니다.</p>
             
-            <canvas id="previewCanvas" width="90" height="90" style="margin: 0 auto 20px; display: block; border-radius: 16px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 0 20px rgba(0,0,0,0.8);"></canvas>
-            
-            <input type="text" id="nicknameInput" placeholder="Enter Nickname" maxlength="12" value="NeonPlayer" autocomplete="off" />
+            <div class="lobby-grid">
+                <div class="lobby-col">
+                    <div class="input-group">
+                        <label>Nickname</label>
+                        <input type="text" id="nicknameInput" class="lobby-input" placeholder="PLAYER" maxlength="12" value="PLAYER" autocomplete="off" />
+                    </div>
+                    <div class="input-group">
+                        <label>Body Color</label>
+                        <select id="colorSelect" class="lobby-select"></select>
+                    </div>
+                    <button id="randomizeBtn" class="random-btn">Random Skin</button>
+                </div>
+                <div class="lobby-col">
+                    <div class="input-group">
+                        <label>Face</label>
+                        <select id="faceSelect" class="lobby-select"></select>
+                    </div>
+                    <div class="input-group">
+                        <label>Skin Shape</label>
+                        <select id="shapeSelect" class="lobby-select"></select>
+                    </div>
+                    <div class="preview-box">
+                        <div class="preview-circle">
+                            <canvas id="previewCanvas" width="60" height="60"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-note">
+              PC: <b>Space / Click / ↑</b> &nbsp;&nbsp;|&nbsp;&nbsp; Mobile: <b>화면 터치</b><br>
+              공중에서 한 번 더 누르면 <b>다단 점프</b><br>
+              <b>R</b> 재시작 / <b>P</b> 일시정지<br><br>
+              <span style="color:#aaa; font-size:12px;">신규 요소: 네온 스타, 중력 반전 포탈, 대시 장벽, 비행 모드 등<br>
+              비행 아이템은 획득 후 누르고 있어야 상승합니다.</span>
+            </div>
             
             <div class="button-row">
-              <button id="randomizeBtn" class="secondary">RANDOM DESIGN</button>
-              <button id="saveSetupBtn">SAVE & NEXT</button>
+              <button id="saveSetupBtn" class="primary-btn">SAVE & NEXT</button>
             </div>
           </div>
 
@@ -412,30 +526,30 @@
             <div class="controls-note">
               <b>[기본 조작]</b> Space / 터치 (화면 클릭)<br>
               <b>[점수 획득]</b> 이동 거리 + 별(⭐) 1개당 1000점!<br>
-              <b>[중력 포탈]</b> 🌀 진입 시 중력 반전 (듀얼 장애물 주의)<br>
+              <b>[중력 포탈]</b> 🌀 진입 시 중력 반전 (현재 경로에 맞춰 장애물 동적 생성!)<br>
               <b>[대시 & 쉴드]</b> 대시 아이템(>>) 획득 시 장벽 파괴 돌진<br>
               <b>[비행 아이템]</b> 획득 후 꾹 누르고 있어야 상승!
             </div>
             <div class="button-row">
-              <button id="startBtn">START SYSTEM</button>
-              <button id="muteBtn" class="secondary">SOUND: ON</button>
+              <button id="startBtn" class="primary-btn">START SYSTEM</button>
+              <button id="muteBtn" class="secondary-btn">SOUND: ON</button>
             </div>
           </div>
 
           <!-- RESULT SCREEN -->
           <div id="resultCard" class="card hidden">
-            <h2 class="title" id="resultTitle" style="color: var(--neon-pink); background: none; -webkit-text-fill-color: var(--neon-pink);">SYSTEM FAILED</h2>
+            <h2 class="title" id="resultTitle">SYSTEM FAILED</h2>
             <p class="subtitle" id="resultText">진행도: 42%</p>
             <div class="rank-text" id="resultRank">Rank: #??? (Top ?%)</div>
             <div class="button-row" style="margin-top: 30px;">
-              <button id="retryBtn">RETRY SEQUENCE</button>
-              <button id="backMenuBtn" class="secondary">MAIN MENU</button>
+              <button id="retryBtn" class="primary-btn">RETRY SEQUENCE</button>
+              <button id="backMenuBtn" class="secondary-btn">MAIN MENU</button>
             </div>
           </div>
 
         </div>
 
-        <div class="hint" id="hintText">Tap / Click / Space to Jump</div>
+        <div class="hint" id="hintText">Tap / Space to Jump · R to Retry</div>
       </div>
     </div>
   </div>
@@ -445,26 +559,13 @@
       'use strict';
 
       // ==========================================
-      // 1. CONFIGURATION (환경 설정)
+      // 1. CONFIGURATION
       // ==========================================
       const CONFIG = {
-        width: 1280, height: 720,
-        groundY: 580, playerX: 250,
-        
-        gravity: 3040,       
-        jumpForce: 980,      
-        flightForce: 6500,   
-        maxFallSpeed: 2000,
-        coyoteTime: 0.12,
-        
-        baseSpeed: 500,
-        maxSpeed: 1200,
-        speedAccel: 15,
-        worldLength: 16000,
-        
-        deathDelay: 0.6,
-        clearDelay: 1.0,
-        dprMax: 2,
+        width: 1280, height: 720, groundY: 580, playerX: 250,
+        gravity: 3040, jumpForce: 980, flightForce: 6500, maxFallSpeed: 2000,
+        coyoteTime: 0.12, baseSpeed: 500, maxSpeed: 1200, speedAccel: 15,
+        worldLength: 16000, deathDelay: 0.6, clearDelay: 1.0, dprMax: 2,
       };
 
       // ==========================================
@@ -489,41 +590,47 @@
         resTitle: document.getElementById('resultTitle'),
         resText: document.getElementById('resultText'),
         resRank: document.getElementById('resultRank'),
+        
+        nickname: document.getElementById('nicknameInput'),
+        colorSel: document.getElementById('colorSelect'),
+        faceSel: document.getElementById('faceSelect'),
+        shapeSel: document.getElementById('shapeSelect'),
+        
         btnRandom: document.getElementById('randomizeBtn'),
         btnSave: document.getElementById('saveSetupBtn'),
         btnStart: document.getElementById('startBtn'),
         btnRetry: document.getElementById('retryBtn'),
         btnMenu: document.getElementById('backMenuBtn'),
         btnMute: document.getElementById('muteBtn'),
-        nickname: document.getElementById('nicknameInput'),
+        
         greeting: document.getElementById('greetingText'),
-        hint: document.getElementById('hintText'),
         fuelWrap: document.getElementById('fuelWrap'),
         fuelFill: document.getElementById('fuelFill'),
         fuelText: document.getElementById('fuelText')
       };
 
       const game = {
-        state: 'setup', // setup -> menu -> playing -> dead/clear
-        attempts: 1,
-        progress: 0,
-        score: 0,
-        stars: 0,
-        timer: 0,
-        muted: false,
-        flash: 0,
-        shakeTime: 0,
-        shakeMag: 0,
-        audioInit: false,
+        state: 'setup', 
+        attempts: 1, progress: 0, score: 0, stars: 0,
+        timer: 0, muted: false, flash: 0, shakeTime: 0, shakeMag: 0, audioInit: false,
       };
 
       const input = { pressed: false, justPressed: false };
 
+      const CUSTOM_COLORS = {
+          'Orange': '#ff9d00', 'White': '#ffffff', 'Cyan': '#0ff', 
+          'Pink': '#ff0055', 'Purple': '#b026ff', 'Green': '#39ff14', 
+          'Gold': '#ffea00', 'Red': '#ff2a2a', 'Blue': '#2a6dff', 'Mint': '#00ffcc'
+      };
+      const CUSTOM_SHAPES = ['Square', 'Circle', 'Diamond', 'UFO', 'Cross', 'Hexagon', 'Triangle', 'Pentagon'];
+      const CUSTOM_FACES = ['Neutral', 'Wink', 'Cat', 'Cool', 'Happy', 'Angry', 'UwU', 'Derp', 'Sleepy', 'Ninja'];
+
       const playerDesign = {
-        nickname: "NeonPlayer",
+        nickname: "PLAYER",
+        colorName: 'Orange',
         base: '#fff',
-        core: '#0ff',
-        shape: 'cross'
+        shape: 'Diamond',
+        face: 'Wink'
       };
 
       const player = {
@@ -531,16 +638,14 @@
         vy: 0, grounded: false, coyote: 0, rotation: 0,
         jumps: 0, maxJumps: 2, jumpLevel: 2,
         isFlying: false, flightTime: 0, maxFlightTime: 6.0,
-        gravityFlipped: false, 
-        isDashing: false, dashTime: 0,
-        trail: []
+        gravityFlipped: false, isDashing: false, dashTime: 0, trail: []
       };
 
       const world = {
         scrollX: 0, speed: CONFIG.baseSpeed,
         obstacles: [], particles: [], bgParticles: [],
         themeColor: '#0ff', gridColor: 'rgba(0, 255, 255, 0.15)',
-        pulseTime: 0, pulse: 1
+        pulseTime: 0, pulse: 1, lastGenX: 800, chunkIndex: 0 
       };
 
       let lastTime = 0;
@@ -549,39 +654,159 @@
       // ==========================================
       // 3. LOBBY & PREVIEW LOGIC
       // ==========================================
+      function initDropdowns() {
+          Object.keys(CUSTOM_COLORS).forEach(c => UI.colorSel.add(new Option(c, c)));
+          CUSTOM_SHAPES.forEach(s => UI.shapeSel.add(new Option(s, s)));
+          CUSTOM_FACES.forEach(f => UI.faceSel.add(new Option(f, f)));
+
+          UI.colorSel.value = playerDesign.colorName;
+          UI.shapeSel.value = playerDesign.shape;
+          UI.faceSel.value = playerDesign.face;
+
+          UI.colorSel.addEventListener('change', (e) => { playerDesign.colorName = e.target.value; drawPreview(); });
+          UI.shapeSel.addEventListener('change', (e) => { playerDesign.shape = e.target.value; drawPreview(); });
+          UI.faceSel.addEventListener('change', (e) => { playerDesign.face = e.target.value; drawPreview(); });
+          UI.nickname.addEventListener('input', (e) => { playerDesign.nickname = e.target.value.trim() || "PLAYER"; });
+      }
+
       function randomizeDesign() {
-        const colors = ['#0ff', '#ff0055', '#b026ff', '#39ff14', '#ffea00', '#ff9d00', '#ffffff'];
-        const shapes = ['cross', 'square', 'circle', 'hollow'];
-        playerDesign.core = colors[Math.floor(Math.random() * colors.length)];
-        playerDesign.shape = shapes[Math.floor(Math.random() * shapes.length)];
+        const cKeys = Object.keys(CUSTOM_COLORS);
+        playerDesign.colorName = cKeys[Math.floor(Math.random() * cKeys.length)];
+        playerDesign.shape = CUSTOM_SHAPES[Math.floor(Math.random() * CUSTOM_SHAPES.length)];
+        playerDesign.face = CUSTOM_FACES[Math.floor(Math.random() * CUSTOM_FACES.length)];
+        
+        UI.colorSel.value = playerDesign.colorName;
+        UI.shapeSel.value = playerDesign.shape;
+        UI.faceSel.value = playerDesign.face;
         drawPreview();
       }
 
+      function buildShapePath(ctxTarget, shapeType, size) {
+          ctxTarget.beginPath();
+          const s = size / 2;
+          switch(shapeType) {
+              case 'Square': ctxTarget.rect(-s, -s, size, size); break;
+              case 'Circle': ctxTarget.arc(0, 0, s, 0, Math.PI*2); break;
+              case 'Diamond': ctxTarget.moveTo(0, -s); ctxTarget.lineTo(s, 0); ctxTarget.lineTo(0, s); ctxTarget.lineTo(-s, 0); break;
+              case 'UFO': ctxTarget.ellipse(0, s*0.2, s, s*0.6, 0, 0, Math.PI*2); ctxTarget.arc(0, -s*0.1, s*0.6, Math.PI, 0); break;
+              case 'Cross': 
+                  ctxTarget.rect(-s, -s*0.3, size, size*0.6); 
+                  ctxTarget.rect(-s*0.3, -s, size*0.6, size); 
+                  break;
+              case 'Hexagon':
+                  for (let i = 0; i < 6; i++) {
+                      ctxTarget.lineTo(s * Math.cos(i * Math.PI / 3), s * Math.sin(i * Math.PI / 3));
+                  }
+                  break;
+              case 'Triangle':
+                  ctxTarget.moveTo(0, -s); ctxTarget.lineTo(s, s); ctxTarget.lineTo(-s, s);
+                  break;
+              case 'Pentagon':
+                  for (let i = 0; i < 5; i++) {
+                      ctxTarget.lineTo(s * Math.cos(i * 2 * Math.PI / 5 - Math.PI / 2), s * Math.sin(i * 2 * Math.PI / 5 - Math.PI / 2));
+                  }
+                  break;
+          }
+          ctxTarget.closePath();
+      }
+
+      function drawFaceLogic(ctxTarget, faceType, size) {
+          ctxTarget.fillStyle = '#05050a';
+          ctxTarget.strokeStyle = '#05050a';
+          ctxTarget.lineWidth = Math.max(2, size*0.06);
+          ctxTarget.lineCap = 'round';
+          ctxTarget.lineJoin = 'round';
+          const s = size / 2;
+
+          ctxTarget.beginPath();
+          switch(faceType) {
+              case 'Neutral':
+                  ctxTarget.fillRect(-s*0.4, -s*0.2, s*0.15, s*0.15); 
+                  ctxTarget.fillRect(s*0.25, -s*0.2, s*0.15, s*0.15); 
+                  ctxTarget.moveTo(-s*0.3, s*0.3); ctxTarget.lineTo(s*0.3, s*0.3); 
+                  break;
+              case 'Wink':
+                  ctxTarget.moveTo(-s*0.4, -s*0.2); ctxTarget.lineTo(-s*0.2, -s*0.1); ctxTarget.lineTo(-s*0.4, 0); 
+                  ctxTarget.fillRect(s*0.25, -s*0.2, s*0.15, s*0.15); 
+                  ctxTarget.moveTo(-s*0.2, s*0.3); ctxTarget.lineTo(s*0.3, s*0.3); 
+                  break;
+              case 'Cat':
+                  ctxTarget.moveTo(-s*0.5, -s*0.8); ctxTarget.lineTo(-s*0.2, -s*0.4); ctxTarget.lineTo(-s*0.8, -s*0.4); ctxTarget.fill(); 
+                  ctxTarget.moveTo(s*0.5, -s*0.8); ctxTarget.lineTo(s*0.2, -s*0.4); ctxTarget.lineTo(s*0.8, -s*0.4); ctxTarget.fill(); 
+                  ctxTarget.fillRect(-s*0.35, -s*0.1, s*0.12, s*0.12); ctxTarget.fillRect(s*0.23, -s*0.1, s*0.12, s*0.12); 
+                  ctxTarget.moveTo(-s*0.2, s*0.3); ctxTarget.quadraticCurveTo(0, s*0.5, 0, s*0.3); ctxTarget.quadraticCurveTo(0, s*0.5, s*0.2, s*0.3); 
+                  break;
+              case 'Cool':
+                  ctxTarget.fillRect(-s*0.5, -s*0.3, s*0.45, s*0.25); 
+                  ctxTarget.fillRect(s*0.05, -s*0.3, s*0.45, s*0.25); 
+                  ctxTarget.moveTo(-s*0.05, -s*0.18); ctxTarget.lineTo(s*0.05, -s*0.18); 
+                  ctxTarget.moveTo(-s*0.2, s*0.3); ctxTarget.lineTo(s*0.2, s*0.3); 
+                  break;
+              case 'Happy':
+                  ctxTarget.moveTo(-s*0.4, -s*0.1); ctxTarget.quadraticCurveTo(-s*0.25, -s*0.3, -s*0.1, -s*0.1); 
+                  ctxTarget.moveTo(s*0.1, -s*0.1); ctxTarget.quadraticCurveTo(s*0.25, -s*0.3, s*0.4, -s*0.1); 
+                  ctxTarget.moveTo(-s*0.3, s*0.1); ctxTarget.quadraticCurveTo(0, s*0.5, s*0.3, s*0.1); 
+                  break;
+              case 'Angry':
+                  ctxTarget.moveTo(-s*0.4, -s*0.3); ctxTarget.lineTo(-s*0.1, -s*0.1); 
+                  ctxTarget.moveTo(s*0.4, -s*0.3); ctxTarget.lineTo(s*0.1, -s*0.1); 
+                  ctxTarget.fillRect(-s*0.35, -s*0.1, s*0.12, s*0.12); ctxTarget.fillRect(s*0.23, -s*0.1, s*0.12, s*0.12); 
+                  ctxTarget.moveTo(-s*0.2, s*0.4); ctxTarget.lineTo(0, s*0.2); ctxTarget.lineTo(s*0.2, s*0.4); 
+                  break;
+              case 'UwU':
+                  ctxTarget.moveTo(-s*0.4, -s*0.2); ctxTarget.quadraticCurveTo(-s*0.25, 0, -s*0.1, -s*0.2); 
+                  ctxTarget.moveTo(s*0.1, -s*0.2); ctxTarget.quadraticCurveTo(s*0.25, 0, s*0.4, -s*0.2); 
+                  ctxTarget.moveTo(-s*0.2, s*0.2); ctxTarget.quadraticCurveTo(0, s*0.4, 0, s*0.2); ctxTarget.quadraticCurveTo(0, s*0.4, s*0.2, s*0.2); 
+                  break;
+              case 'Derp':
+                  ctxTarget.beginPath(); ctxTarget.arc(-s*0.25, -s*0.1, s*0.15, 0, Math.PI*2); ctxTarget.stroke(); 
+                  ctxTarget.beginPath(); ctxTarget.arc(s*0.25, -s*0.1, s*0.1, 0, Math.PI*2); ctxTarget.stroke(); 
+                  ctxTarget.fillRect(-s*0.3, -s*0.15, s*0.08, s*0.08); 
+                  ctxTarget.fillRect(s*0.2, -s*0.05, s*0.06, s*0.06); 
+                  ctxTarget.moveTo(-s*0.2, s*0.3); ctxTarget.lineTo(s*0.3, s*0.4); 
+                  break;
+              case 'Sleepy':
+                  ctxTarget.moveTo(-s*0.4, -s*0.1); ctxTarget.lineTo(-s*0.1, -s*0.1); 
+                  ctxTarget.moveTo(s*0.1, -s*0.1); ctxTarget.lineTo(s*0.4, -s*0.1); 
+                  ctxTarget.beginPath(); ctxTarget.arc(0, s*0.3, s*0.1, 0, Math.PI*2); ctxTarget.fill(); 
+                  break;
+              case 'Ninja':
+                  ctxTarget.fillRect(-s*0.9, -s*0.3, size*0.9, s*0.4); 
+                  ctxTarget.fillStyle = '#fff';
+                  ctxTarget.moveTo(-s*0.4, -s*0.1); ctxTarget.lineTo(-s*0.1, -s*0.2); 
+                  ctxTarget.moveTo(s*0.4, -s*0.1); ctxTarget.lineTo(s*0.1, -s*0.2); 
+                  break;
+          }
+          ctxTarget.stroke();
+      }
+
       function drawPreview() {
-        pCtx.clearRect(0, 0, 90, 90);
+        pCtx.clearRect(0, 0, 60, 60);
         pCtx.save();
-        pCtx.translate(45, 45);
+        pCtx.translate(30, 30); // 60x60 캔버스의 정중앙
+        
+        const coreColor = CUSTOM_COLORS[playerDesign.colorName];
 
-        // 글로우 효과
-        pCtx.shadowColor = playerDesign.core;
-        pCtx.shadowBlur = 15;
+        pCtx.shadowColor = coreColor;
+        pCtx.shadowBlur = 10;
+        
+        buildShapePath(pCtx, playerDesign.shape, 36);
         pCtx.fillStyle = playerDesign.base;
-        pCtx.fillRect(-18, -18, 36, 36);
+        pCtx.fill();
 
-        // 코어 모양 그리기
         pCtx.shadowBlur = 0;
-        pCtx.fillStyle = playerDesign.core;
+        pCtx.fillStyle = coreColor;
         if (playerDesign.shape === 'cross') {
-            pCtx.fillRect(-14, -4, 28, 8);
-            pCtx.fillRect(-4, -14, 8, 28);
+            pCtx.fillRect(-14, -4, 28, 8); pCtx.fillRect(-4, -14, 8, 28);
         } else if (playerDesign.shape === 'square') {
             pCtx.fillRect(-8, -8, 16, 16);
         } else if (playerDesign.shape === 'circle') {
-            pCtx.beginPath(); pCtx.arc(0, 0, 10, 0, Math.PI*2); pCtx.fill();
+            pCtx.beginPath(); pCtx.arc(0,0,10,0,Math.PI*2); pCtx.fill();
         } else if (playerDesign.shape === 'hollow') {
-            pCtx.strokeStyle = playerDesign.core; pCtx.lineWidth = 4;
-            pCtx.strokeRect(-10, -10, 20, 20);
+            pCtx.strokeStyle = coreColor; pCtx.lineWidth = 4; pCtx.strokeRect(-10, -10, 20, 20);
         }
+
+        drawFaceLogic(pCtx, playerDesign.face, 36);
         pCtx.restore();
       }
 
@@ -590,10 +815,7 @@
         if (name.length === 0) name = "NeonPlayer";
         playerDesign.nickname = name;
         UI.greeting.textContent = `Welcome, ${playerDesign.nickname}!`;
-        
-        UI.setupCard.classList.add('hidden');
-        UI.menuCard.classList.remove('hidden');
-        game.state = 'menu';
+        showMenu();
       }
 
       function showMenu() {
@@ -603,124 +825,126 @@
         UI.menuCard.classList.remove('hidden');
       }
 
+      function showSetup() {
+        game.state = 'setup';
+        UI.menuCard.classList.add('hidden');
+        UI.resultCard.classList.add('hidden');
+        UI.setupCard.classList.remove('hidden');
+      }
+
       // ==========================================
-      // 4. LEVEL GENERATION (DUAL PATHS)
+      // 4. DYNAMIC LEVEL GENERATION
       // ==========================================
-      function buildLevel() {
+      const spike = (x, flip=false, w=40, h=40) => ({ type: flip ? 'spike_down' : 'spike', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#f0f', fatalHit: false });
+      const ceilSpike = (x, w=40, h=40) => ({ type: 'spike_down', x, y: 50, w, h, color: '#f0f', fatalHit: false }); 
+      const block = (x, flip=false, w=50, h=60) => ({ type: 'block', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#0ff', fatalHit: false });
+      const ceilBlock = (x, w=50, h=60) => ({ type: 'block', x, y: 50, w, h, color: '#0ff', fatalHit: false }); 
+      const superBlock = (x, flip=false, h=160) => ({ type: 'block', x, y: flip ? 50 : CONFIG.groundY - h, w: 50, h, color: '#b026ff', fatalHit: false });
+      
+      // 초록색 1방향 발판 (길이를 넓혀서 넘어가는 버그 방지)
+      const plat = (x, y, w=180) => ({ type: 'platform', x, y, w, h: 20, color: '#39ff14', fatalHit: false });
+      
+      const orb = (x, y) => ({ type: 'orb', x, y, r: 24, w: 48, h: 48, used: false, color: '#ffea00' });
+      const flightItem = (x, y) => ({ type: 'item_flight', x, y, r: 30, w: 60, h: 60, used: false, color: '#ffea00' });
+      const rhombus = (x, flip=false, size=60) => ({ type: 'rhombus', x, y: flip ? 50 : CONFIG.groundY - size, w: size, h: size, color: '#ff0055', fatalHit: false });
+      const trap = (x, flip=false, w=80, h=80) => ({ type: 'trapezoid', narrow: flip ? 'bottom' : 'top', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#ff9d00', fatalHit: false });
+      const star = (x, y) => ({ type: 'star', x, y, w: 30, h: 30, collected: false });
+      const portalGrav = (x, y, dir) => ({ type: 'portal_grav', x, y, w: 60, h: 100, dir, used: false });
+      const orbDash = (x, y) => ({ type: 'orb_dash', x, y, r: 24, w: 48, h: 48, used: false, color: '#ff0055' });
+      const glassWall = (x, flip=false, h=150) => ({ type: 'glass', x, y: flip ? 50 : CONFIG.groundY - h, w: 40, h, destroyed: false, color: '#ff0055', fatalHit: false });
+
+      function generateNextChunk(cx, isFlipped, index) {
         const list = [];
-        const spike = (x, w=40, h=40) => ({ type: 'spike', x, y: CONFIG.groundY - h, w, h, color: '#f0f' });
-        const ceilSpike = (x, w=40, h=40) => ({ type: 'spike_down', x, y: 50, w, h, color: '#f0f' }); // 천장 장애물
-        
-        const block = (x, w=50, h=60) => ({ type: 'block', x, y: CONFIG.groundY - h, w, h, color: '#0ff' });
-        const ceilBlock = (x, w=50, h=60) => ({ type: 'block', x, y: 50, w, h, color: '#0ff' }); // 천장 블록
-        
-        const superBlock = (x, h=160) => ({ type: 'block', x, y: CONFIG.groundY - h, w: 50, h, color: '#b026ff' });
-        const plat = (x, y, w=100) => ({ type: 'platform', x, y, w, h: 20, color: '#39ff14' });
-        const orb = (x, y) => ({ type: 'orb', x, y, r: 24, w: 48, h: 48, used: false, color: '#ffea00' });
-        const flightItem = (x, y) => ({ type: 'item_flight', x, y, r: 30, w: 60, h: 60, used: false, color: '#ffea00' });
-        const rhombus = (x, size=60) => ({ type: 'rhombus', x, y: CONFIG.groundY - size, w: size, h: size, color: '#ff0055' });
-        const trap = (x, w=80, h=80, narrow='top') => ({ type: 'trapezoid', narrow, x, y: CONFIG.groundY - h, w, h, color: '#ff9d00' });
-        
-        const star = (x, y) => ({ type: 'star', x, y, w: 30, h: 30, collected: false });
-        const portalGrav = (x, y, dir) => ({ type: 'portal_grav', x, y, w: 60, h: 100, dir, used: false });
-        const orbDash = (x, y) => ({ type: 'orb_dash', x, y, r: 24, w: 48, h: 48, used: false, color: '#ff0055' });
-        const glassWall = (x, h=150) => ({ type: 'glass', x, y: CONFIG.groundY - h, w: 40, h, destroyed: false, color: '#ff0055' });
-
-        let cx = 800; 
         const baseGap = 850;
-        const doubleJumpGap = 1050; 
-        
-        // [고정 튜토리얼 구간]
-        list.push(spike(cx)); cx += baseGap;
-        list.push(spike(cx)); list.push(star(cx + 10, CONFIG.groundY - 100)); cx += baseGap;
-        list.push(block(cx, 80, 50)); cx += baseGap;
-        
-        list.push(superBlock(cx, 160)); cx += doubleJumpGap;
-        
-        list.push(orbDash(cx, CONFIG.groundY - 120)); 
-        list.push(glassWall(cx + 250, 200)); 
-        list.push(star(cx + 300, CONFIG.groundY - 100)); cx += doubleJumpGap;
+        const doubleJumpGap = 1050;
+        let nextX = cx;
 
-        // [중력 튜토리얼 - 듀얼 패스 적용]
-        list.push(portalGrav(cx, CONFIG.groundY - 150, 'up')); cx += baseGap;
-        // 바닥을 달리는 유저를 위한 함정
-        list.push(spike(cx)); 
-        // 천장을 달리는 유저를 위한 함정
-        list.push(ceilSpike(cx)); 
-        list.push(star(cx, 150)); // 천장에 별
-        cx += doubleJumpGap;
-        
-        list.push(portalGrav(cx, 50, 'down')); cx += baseGap;
-
-        list.push(flightItem(cx, CONFIG.groundY - 150)); cx += 400;
-        
-        for (let i=0; i<4; i++) {
-            list.push(spike(cx, 150, 40)); 
-            if (i%2 === 0) list.push(trap(cx + 40, 70, 200, 'bottom')); 
-            else {
-                list.push(plat(cx + 50, CONFIG.groundY - 300, 100)); 
-                list.push(star(cx + 90, CONFIG.groundY - 350));
-            }
-            cx += 500;
+        if (index === 0) {
+            list.push(spike(nextX, false)); nextX += baseGap;
+            list.push(spike(nextX, false)); list.push(star(nextX + 10, CONFIG.groundY - 100)); nextX += baseGap;
+            list.push(block(nextX, false, 80, 50)); nextX += baseGap;
+            list.push(superBlock(nextX, false, 160)); nextX += doubleJumpGap;
         }
-        cx += baseGap; 
-
-        // [랜덤 구간]
-        const numRandomChunks = 35; 
-        for (let i = 0; i < numRandomChunks; i++) {
+        else if (index === 1) {
+            list.push(orbDash(nextX, CONFIG.groundY - 120)); 
+            list.push(glassWall(nextX + 250, false, 200)); 
+            list.push(star(nextX + 300, CONFIG.groundY - 100)); nextX += doubleJumpGap;
+        }
+        else if (index === 2) {
+            list.push(portalGrav(nextX, CONFIG.groundY - 150, 'up')); nextX += baseGap;
+            list.push(spike(nextX, false)); 
+            list.push(spike(nextX, true));  
+            list.push(star(nextX, 150)); 
+            nextX += doubleJumpGap;
+            list.push(portalGrav(nextX, 50, 'down')); nextX += baseGap;
+        }
+        else if (index === 3) {
+            list.push(flightItem(nextX, CONFIG.groundY - 150)); nextX += 800; 
+            for (let i=0; i<4; i++) {
+                list.push(spike(nextX, false, 150, 40)); 
+                if (i > 0) list.push(spike(nextX, true, 150, 40)); 
+                
+                if (i%2 === 1) { 
+                    list.push(trap(nextX + 40, false, 70, 140)); 
+                    list.push(trap(nextX + 40, true, 70, 140)); 
+                } else { 
+                    list.push(plat(nextX + 50, CONFIG.groundY - 260, 180)); 
+                    list.push(star(nextX + 130, CONFIG.groundY - 310));
+                }
+                nextX += 600; 
+            }
+            nextX += baseGap; 
+        }
+        else {
             const rand = Math.random();
+            const mF = isFlipped;  
+            const sF = !isFlipped; 
             
             if (rand < 0.15) {
-                list.push(spike(cx)); list.push(spike(cx + 40));
-                list.push(star(cx + 20, CONFIG.groundY - 130)); 
-                cx += baseGap;
+                list.push(spike(nextX, mF)); list.push(spike(nextX + 40, mF));
+                list.push(star(nextX + 20, mF ? 130 : CONFIG.groundY - 130)); 
+                nextX += baseGap;
             } else if (rand < 0.30) {
-                list.push(rhombus(cx, 60 + Math.random()*20)); cx += baseGap;
+                list.push(rhombus(nextX, mF, 60 + Math.random()*20)); nextX += baseGap;
             } else if (rand < 0.45) {
-                list.push(orbDash(cx, CONFIG.groundY - 140));
-                list.push(glassWall(cx + 300, 250));
-                cx += doubleJumpGap;
+                list.push(orbDash(nextX, mF ? 140 : CONFIG.groundY - 140));
+                list.push(glassWall(nextX + 300, mF, 250));
+                nextX += doubleJumpGap;
             } else if (rand < 0.65) {
-                // [듀얼 패스 중력 포탈 구간]
-                list.push(portalGrav(cx, CONFIG.groundY - 100, 'up')); cx += baseGap;
-                
-                // 바닥 경로 (포탈 무시한 유저)
-                list.push(block(cx, 50, 80));
-                list.push(spike(cx + 400));
-                
-                // 천장 경로 (포탈 탄 유저)
-                list.push(ceilBlock(cx, 50, 80));
-                list.push(star(cx + 25, 140));
-                list.push(ceilSpike(cx + 400));
-                
-                cx += doubleJumpGap;
-                list.push(portalGrav(cx, 50, 'down')); cx += baseGap;
-                // 땅으로 돌아온 후 함정
-                list.push(spike(cx)); cx += baseGap;
-
+                list.push(portalGrav(nextX, mF ? 50 : CONFIG.groundY - 100, mF ? 'down' : 'up')); nextX += baseGap;
+                list.push(block(nextX, sF, 50, 80));
+                list.push(star(nextX + 25, sF ? 140 : CONFIG.groundY - 140));
+                nextX += doubleJumpGap;
+                list.push(portalGrav(nextX, sF ? 50 : CONFIG.groundY - 100, sF ? 'down' : 'up')); nextX += baseGap;
+                list.push(spike(nextX, mF)); nextX += baseGap;
             } else if (rand < 0.80) {
-                list.push(superBlock(cx, 200 + Math.random()*60)); 
-                list.push(star(cx + 5, CONFIG.groundY - 300));
-                cx += doubleJumpGap;
+                list.push(superBlock(nextX, mF, 200 + Math.random()*60)); 
+                list.push(star(nextX + 5, mF ? 300 : CONFIG.groundY - 300));
+                nextX += doubleJumpGap;
             } else if (rand < 0.90) {
-                list.push(trap(cx, 80, 80, 'bottom')); 
-                list.push(plat(cx + 120, CONFIG.groundY - 140, 120));
-                list.push(spike(cx + 150)); 
-                cx += doubleJumpGap;
+                list.push(trap(nextX, mF, 80, 80)); 
+                list.push(plat(nextX + 120, mF ? 140 : CONFIG.groundY - 140, 180));
+                list.push(spike(nextX + 150, mF)); 
+                nextX += doubleJumpGap;
             } else {
-                list.push(flightItem(cx, CONFIG.groundY - 100)); cx += 400;
+                list.push(flightItem(nextX, mF ? 100 : CONFIG.groundY - 100)); nextX += 800; 
                 const flightLen = 2 + Math.floor(Math.random() * 2);
                 for (let j = 0; j < flightLen; j++) {
-                    list.push(spike(cx, 200, 50));
-                    list.push(trap(cx + 50, 100, 250, (j%2===0)?'bottom':'top'));
-                    cx += 500;
+                    list.push(spike(nextX, mF, 200, 50));
+                    if (j > 0) list.push(trap(nextX + 50, mF, 100, 160));
+                    nextX += 600; 
                 }
-                cx += baseGap;
+                nextX += baseGap;
+            }
+
+            if (Math.random() < 0.5) {
+                const subX = cx + Math.random() * (nextX - cx - 150);
+                if (Math.random() < 0.5) list.push(spike(subX, sF));
+                else list.push(block(subX, sF, 40, 40));
             }
         }
         
-        CONFIG.worldLength = cx + 1000; 
-        return list;
+        return { items: list, nextX: nextX };
       }
 
       function initBackgroundParticles() {
@@ -750,7 +974,9 @@
         world.speed = CONFIG.baseSpeed;
         world.themeColor = '#0ff';
         world.gridColor = 'rgba(0, 255, 255, 0.15)';
-        world.obstacles = buildLevel();
+        world.obstacles = [];
+        world.lastGenX = 800;
+        world.chunkIndex = 0;
         world.particles = [];
         world.pulseTime = 0;
         initBackgroundParticles();
@@ -792,9 +1018,11 @@
         game.timer = isClear ? CONFIG.clearDelay : CONFIG.deathDelay;
         game.flash = isClear ? 0.8 : 1;
         
+        const coreColor = CUSTOM_COLORS[playerDesign.colorName];
+
         if (!isClear) {
             triggerShake(20, 0.4);
-            createExplosion(player.x + player.w/2, player.y + player.h/2, playerDesign.core);
+            createExplosion(player.x + player.w/2, player.y + player.h/2, coreColor);
             playSound(100, 0.3, 'sawtooth', 0.1); 
         } else {
             game.progress = 100;
@@ -802,17 +1030,18 @@
             setTimeout(() => playSound(800, 0.2, 'square', 0.05), 100);
         }
 
-        // 랭킹 및 점수 계산
         const finalScore = game.score;
-        const rankNum = Math.max(1, 10000 - Math.floor(finalScore / 10)); // 단순 모의 랭크 계산
+        const rankNum = Math.max(1, 10000 - Math.floor(finalScore / 10)); 
         const topPct = Math.max(0.1, (rankNum / 10000) * 100).toFixed(1);
 
         UI.resTitle.textContent = isClear ? 'STAGE CLEARED' : 'SYSTEM FAILED';
-        UI.resTitle.style.background = isClear ? 'linear-gradient(to right, #00ff00, #00ffff)' : 'linear-gradient(to right, #ff0055, #ff00ff)';
-        UI.resTitle.style.webkitBackgroundClip = 'text';
+        // 클리어 시 초록색/시안색, 실패 시 핑크색으로 명확히 구분
+        UI.resTitle.style.backgroundImage = isClear ? 'linear-gradient(to right, #39ff14, #00ffff)' : 'linear-gradient(to right, #ff0055, #ff00ff)';
+        UI.resTitle.style.filter = isClear ? 'drop-shadow(0 0 8px rgba(0, 255, 255, 0.4))' : 'drop-shadow(0 0 8px rgba(255, 0, 255, 0.4))';
         
         UI.resText.innerHTML = `Player: <b>${playerDesign.nickname}</b><br>Progress: ${game.progress.toFixed(0)}%<br>Score: ${finalScore}<br>Stars: ${game.stars}`;
         UI.resRank.textContent = `Rank: #${rankNum} (Top ${topPct}%)`;
+        UI.resultCard.classList.remove('hidden');
       }
 
       function updateProgress() {
@@ -821,7 +1050,6 @@
         UI.progText.textContent = `${val.toFixed(0)}%`;
         UI.progFill.style.width = `${val}%`;
 
-        // 3단 점프 해금 시스템
         if (game.progress >= 50 && player.jumpLevel < 3) {
             player.jumpLevel = 3;
             player.maxJumps = 3;
@@ -917,12 +1145,13 @@
         player.vy = (player.gravityFlipped ? CONFIG.jumpForce : -CONFIG.jumpForce) * forceMult;
         player.grounded = false; player.coyote = 0; player.jumps++;
         
+        const coreColor = CUSTOM_COLORS[playerDesign.colorName];
         const footY = player.gravityFlipped ? player.y : player.y + player.h;
         if (isDouble) {
-            createRing(player.x + player.w/2, footY, playerDesign.core);
+            createRing(player.x + player.w/2, footY, coreColor);
             playSound(250, 0.1, 'square', 0.04);
         } else {
-            createDust(player.x + player.w/2, footY, playerDesign.core);
+            createDust(player.x + player.w/2, footY, coreColor);
             playSound(150, 0.1, 'square', 0.03); 
         }
       }
@@ -946,15 +1175,15 @@
       function getHitbox(ob, sx) {
         let hit = { x: sx, y: ob.y, w: ob.w, h: ob.h };
         if (ob.type === 'spike') {
-            hit.x += ob.w * 0.25; hit.w *= 0.5;
-            hit.y += ob.h * 0.4;  hit.h *= 0.6;
+            hit.x += ob.w * 0.25; hit.w *= 0.5; hit.y += ob.h * 0.4;  hit.h *= 0.6;
         } else if (ob.type === 'spike_down') {
-            hit.x += ob.w * 0.25; hit.w *= 0.5;
-            hit.y += 0; hit.h *= 0.6; // 천장에 붙은 형태
+            hit.x += ob.w * 0.25; hit.w *= 0.5; hit.y += 0; hit.h *= 0.6; 
         } else if (ob.type === 'rhombus') {
             hit.x += ob.w * 0.2; hit.w *= 0.6; hit.y += ob.h * 0.2; hit.h *= 0.6;
         } else if (ob.type === 'trapezoid') {
             hit.x += 8; hit.w -= 16; hit.y += 8; hit.h -= 16;
+        } else if (ob.type === 'platform') {
+            hit.x += 6; hit.w -= 12; hit.y += 6; hit.h -= 12;
         } else {
             hit.x += 4; hit.w -= 8; hit.y += 4; hit.h -= 8;
         }
@@ -1081,18 +1310,19 @@
                 }
             }
 
+            // 플랫폼 탑승 처리 (착지 판정 여유 범위 +10px 넓혀서 점프 궤적 버그 방지)
             if (['platform', 'block', 'trapezoid'].includes(ob.type)) {
                 if (!player.gravityFlipped) {
                     const prevBottom = player.y - player.vy * dt + player.h;
-                    if (player.vy >= 0 && player.x + player.w > sx + 4 && player.x < sx + ob.w - 4 &&
-                        prevBottom <= ob.y + 25 && player.y + player.h >= ob.y) {
+                    if (player.vy >= 0 && player.x + player.w > sx - 10 && player.x < sx + ob.w + 10 &&
+                        prevBottom <= ob.y + 30 && player.y + player.h >= ob.y) {
                       player.y = ob.y - player.h; player.vy = 0; player.grounded = true;
                       player.coyote = CONFIG.coyoteTime; player.jumps = 0; continue; 
                     }
                 } else {
                     const prevTop = player.y - player.vy * dt;
-                    if (player.vy <= 0 && player.x + player.w > sx + 4 && player.x < sx + ob.w - 4 &&
-                        prevTop >= ob.y + ob.h - 25 && player.y <= ob.y + ob.h) {
+                    if (player.vy <= 0 && player.x + player.w > sx - 10 && player.x < sx + ob.w + 10 &&
+                        prevTop >= ob.y + ob.h - 30 && player.y <= ob.y + ob.h) {
                       player.y = ob.y + ob.h; player.vy = 0; player.grounded = true;
                       player.coyote = CONFIG.coyoteTime; player.jumps = 0; continue; 
                     }
@@ -1106,15 +1336,21 @@
                        ob.destroyed = true; createGlassShatter(sx, ob.y);
                        playSound(200, 0.15, 'square', 0.1); triggerShake(8, 0.1); continue;
                    } else {
+                       ob.fatalHit = true;
                        showResult(false); break;
                    }
                }
             }
 
-            // 장애물 (천장 스파이크 포함) 치명적 충돌
-            if (['spike', 'spike_down', 'block', 'trapezoid', 'rhombus', 'platform'].includes(ob.type)) {
+            const fatalObstacles = ['spike', 'spike_down', 'block', 'trapezoid', 'rhombus'];
+            if (player.isFlying) {
+                fatalObstacles.push('platform'); 
+            }
+
+            if (fatalObstacles.includes(ob.type)) {
                const hitbox = getHitbox(ob, sx);
                if (checkCollision(pRect, hitbox)) {
+                 ob.fatalHit = true;
                  showResult(false); break;
                }
             }
@@ -1168,15 +1404,15 @@
 
       function updateTrail(dt) {
         if (!player.isFlying && !player.isDashing) {
-             player.rotation += (player.grounded ? 0 : 10) * dt;
-             if (player.grounded && player.rotation % (Math.PI/2) !== 0) {
-               player.rotation = Math.round(player.rotation / (Math.PI/2)) * (Math.PI/2);
-             }
+             // 이동 속도에 비례하여 바퀴처럼 굴러가도록 회전 속도 계산 (v = r * w)
+             const radius = player.w / 2;
+             const angularVel = world.speed / radius;
+             // 중력 반전 시 바닥이 위에 있으므로 반대 방향으로 회전
+             player.rotation += angularVel * dt * (player.gravityFlipped ? -1 : 1);
         } else if (player.isFlying) player.rotation = player.gravityFlipped ? 0.2 : -0.2;
         else if (player.isDashing) player.rotation += 25 * dt; 
 
-        // 플레이어 상태에 따른 색상 결정
-        let currentColor = playerDesign.core;
+        let currentColor = CUSTOM_COLORS[playerDesign.colorName];
         if (player.isFlying) currentColor = '#ffea00';
         else if (player.isDashing) currentColor = '#ff0055';
 
@@ -1193,13 +1429,20 @@
         updateEffects(dt);
 
         if (game.state === 'playing') {
+          while (world.lastGenX < world.scrollX + CONFIG.width + 1500 && world.lastGenX < CONFIG.worldLength) {
+              const chunk = generateNextChunk(world.lastGenX, player.gravityFlipped, world.chunkIndex);
+              world.obstacles.push(...chunk.items);
+              world.lastGenX = chunk.nextX;
+              world.chunkIndex++;
+          }
+          world.obstacles = world.obstacles.filter(ob => (ob.x - world.scrollX) + (ob.w || ob.r*2) > -300);
+
           world.speed = Math.min(CONFIG.maxSpeed, world.speed + CONFIG.speedAccel * dt);
           let currentSpeed = world.speed;
           if (player.isDashing) currentSpeed *= 1.6;
           
           world.scrollX += currentSpeed * dt;
           
-          // 점수 업데이트 (이동 거리 + 별 보너스)
           game.score = Math.floor(world.scrollX / 10) + (game.stars * 1000);
           UI.score.textContent = `SCORE: ${game.score}`;
 
@@ -1219,12 +1462,14 @@
           updateTrail(dt);
           updateProgress();
           
-          if (world.scrollX >= CONFIG.worldLength) showResult(true);
+          if (world.scrollX >= CONFIG.worldLength && game.state === 'playing') {
+             showResult(true);
+          }
 
         } else if (game.state === 'dead' || game.state === 'clear') {
           game.timer -= dt;
           if (game.timer <= 0) {
-            UI.resultCard.classList.remove('hidden');
+             // UI를 안전하게 띄울 수 있도록 대기 타이머
           }
         }
       }
@@ -1290,16 +1535,26 @@
             ctx.beginPath(); ctx.moveTo(x + ob.w/2, ob.y);
             ctx.lineTo(x + ob.w, ob.y + ob.h); ctx.lineTo(x, ob.y + ob.h);
             ctx.closePath(); ctx.fill(); ctx.stroke();
-          } else if (ob.type === 'spike_down') { // 천장 스파이크
+          } else if (ob.type === 'spike_down') { 
             ctx.fillStyle = '#111'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
             ctx.beginPath(); ctx.moveTo(x + ob.w/2, ob.y + ob.h);
             ctx.lineTo(x + ob.w, ob.y); ctx.lineTo(x, ob.y);
             ctx.closePath(); ctx.fill(); ctx.stroke();
-          } else if (ob.type === 'block' || ob.type === 'platform') {
+          } else if (ob.type === 'block') {
             ctx.fillStyle = '#0f1423'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
             ctx.strokeRect(x, ob.y, ob.w, ob.h); ctx.fillRect(x, ob.y, ob.w, ob.h);
             ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
             ctx.strokeRect(x+5, ob.y+5, ob.w-10, ob.h-10);
+          } else if (ob.type === 'platform') {
+            // [패치] 플랫폼 디자인을 에너지 선 모양으로 확실하게 변경하여 1방향임을 시각적으로 암시
+            ctx.fillStyle = 'rgba(57, 255, 20, 0.1)'; 
+            ctx.fillRect(x, ob.y, ob.w, ob.h);
+            ctx.strokeStyle = ob.color; ctx.lineWidth = 2;
+            ctx.strokeRect(x, ob.y, ob.w, ob.h);
+            ctx.shadowBlur = 15 * world.pulse;
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(x, ob.y, ob.w, 4); // 상단 라인
+            ctx.fillRect(x, ob.y + ob.h - 4, ob.w, 4); // 하단 라인
           } else if (ob.type === 'rhombus') {
             ctx.fillStyle = '#111'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
             ctx.beginPath(); ctx.moveTo(x + ob.w/2, ob.y); ctx.lineTo(x + ob.w, ob.y + ob.h/2);
@@ -1401,6 +1656,22 @@
             for (let i = 0; i < ob.h; i += 30) { ctx.moveTo(x, ob.y + i); ctx.lineTo(x + ob.w, ob.y + i + 30); ctx.moveTo(x + ob.w, ob.y + i); ctx.lineTo(x, ob.y + i + 30); }
             ctx.stroke();
           }
+          
+          if (game.state === 'dead' && ob.fatalHit) {
+              ctx.save();
+              const hit = getHitbox(ob, x);
+              ctx.strokeStyle = '#ff0000';
+              ctx.lineWidth = 3;
+              ctx.setLineDash([5, 5]);
+              ctx.strokeRect(hit.x, hit.y, hit.w, hit.h);
+              
+              ctx.fillStyle = '#ff0000';
+              ctx.font = '14px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.fillText('FATAL HIT', hit.x + hit.w/2, hit.y - 10);
+              ctx.restore();
+          }
+          
           ctx.shadowBlur = 0;
         }
       }
@@ -1413,9 +1684,13 @@
           ctx.translate(t.x + player.w/2, t.y + player.h/2);
           if (player.gravityFlipped) ctx.scale(1, -1);
           ctx.rotate(t.rot);
+          
+          // [패치] 잔상에도 패스 빌더를 이용해 정확한 커스텀 도형 렌더링
+          buildShapePath(ctx, playerDesign.shape, player.w * 0.9);
           ctx.fillStyle = t.color;
           ctx.globalAlpha = t.life * 2; 
-          ctx.fillRect(-player.w/2, -player.h/2, player.w, player.h);
+          ctx.fill();
+          
           ctx.restore();
         });
 
@@ -1424,14 +1699,17 @@
         if (player.gravityFlipped) ctx.scale(1, -1);
         ctx.rotate(player.rotation);
         
-        let currentColor = playerDesign.core;
+        let currentColor = CUSTOM_COLORS[playerDesign.colorName];
         if (player.isFlying) currentColor = '#ffea00';
         else if (player.isDashing) currentColor = '#ff0055';
 
         ctx.shadowColor = currentColor;
         ctx.shadowBlur = 20 * world.pulse;
+        
+        // [패치] 플레이어 베이스 형태 정확히 렌더링
+        buildShapePath(ctx, playerDesign.shape, player.w * 0.9);
         ctx.fillStyle = playerDesign.base;
-        ctx.fillRect(-player.w/2, -player.h/2, player.w, player.h);
+        ctx.fill();
         
         ctx.shadowBlur = 0;
         ctx.fillStyle = currentColor;
@@ -1446,6 +1724,8 @@
             ctx.strokeStyle = currentColor; ctx.lineWidth = 4;
             ctx.strokeRect(-10, -10, 20, 20);
         }
+        
+        drawFaceLogic(ctx, playerDesign.face, player.w * 0.9);
         ctx.restore();
       }
 
@@ -1519,7 +1799,7 @@
       window.addEventListener('keydown', (e) => {
         if (["Space", "ArrowUp", "KeyR", "Escape"].includes(e.code) && document.activeElement !== UI.nickname) e.preventDefault();
         
-        if (document.activeElement === UI.nickname) return; // 닉네임 입력 중 키보드 무시
+        if (document.activeElement === UI.nickname) return;
 
         if ((e.code === 'Space' || e.code === 'ArrowUp') && !e.repeat) handlePress();
         if (e.code === 'KeyR' && (game.state === 'playing' || game.state === 'paused' || game.state === 'dead' || game.state === 'clear')) {
@@ -1536,16 +1816,15 @@
 
       const pOpts = { passive: false };
       window.addEventListener('pointerdown', (e) => {
-        if (['BUTTON', 'INPUT', 'LABEL'].includes(e.target.tagName)) return;
+        if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
         e.preventDefault(); window.focus(); handlePress(); 
       }, pOpts);
       window.addEventListener('pointerup', (e) => {
-        if (['BUTTON', 'INPUT', 'LABEL'].includes(e.target.tagName)) return;
+        if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
         e.preventDefault(); handleRelease(); 
       }, pOpts);
       window.addEventListener('pointercancel', handleRelease, pOpts);
 
-      // UI 이벤트 연결
       UI.btnRandom.addEventListener('click', randomizeDesign);
       UI.btnSave.addEventListener('click', saveSetup);
       UI.btnStart.addEventListener('click', () => { tryUnlockAudio(); startGame(); });
@@ -1567,9 +1846,10 @@
       window.addEventListener('resize', resize);
       resize();
       
-      // 초기 실행 (로비 셋업)
+      initDropdowns();
       randomizeDesign();
       resetRun(false);
+      showSetup();
       requestAnimationFrame(loop);
     })();
   </script>
