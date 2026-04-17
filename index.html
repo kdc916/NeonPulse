@@ -191,9 +191,7 @@
     }
 
     .card {
-      width: min(90vw, 600px);
-      max-height: 90vh; /* 반응형 화면 대응: 높이 제한 */
-      overflow-y: auto; /* 내용이 넘칠 경우 스크롤 생성 */
+      width: min(90vw, 450px);
       padding: 32px;
       border-radius: 16px;
       background: linear-gradient(145deg, rgba(20, 20, 30, 0.85), rgba(10, 10, 15, 0.95));
@@ -206,27 +204,14 @@
       transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    /* 카드 커스텀 스크롤바 디자인 */
-    .card::-webkit-scrollbar {
-      width: 6px;
-    }
-    .card::-webkit-scrollbar-track {
-      background: rgba(255,255,255,0.05);
-      border-radius: 8px;
-    }
-    .card::-webkit-scrollbar-thumb {
-      background: var(--neon-cyan);
-      border-radius: 8px;
-    }
-
     .card.hidden {
       display: none !important;
       transform: translateY(20px);
     }
 
     .title {
-      margin: 0 0 10px;
-      font-size: clamp(32px, 6vw, 48px);
+      margin: 0 0 5px;
+      font-size: clamp(28px, 6vw, 42px);
       font-weight: 800;
       line-height: 1.1;
       text-transform: uppercase;
@@ -238,30 +223,27 @@
     }
 
     .subtitle {
-      margin: 0 0 24px;
+      margin: 0 0 20px;
       color: var(--muted);
-      font-size: 15px;
+      font-size: 14px;
       line-height: 1.6;
     }
 
+    /* 압축된 로비 그리드 레이아웃 */
     .lobby-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      gap: 12px;
       text-align: left;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
-    .lobby-col {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+    .span-2 { grid-column: span 2; }
 
     .input-group {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
     }
 
     .input-group label {
@@ -273,13 +255,13 @@
 
     .lobby-input, .lobby-select {
       width: 100%;
-      padding: 12px 14px;
+      padding: 10px 12px;
       background: rgba(0, 0, 0, 0.5);
       border: 1px solid rgba(255, 255, 255, 0.15);
       color: #fff;
       border-radius: 8px;
       font-family: 'Outfit', sans-serif;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       outline: none;
       transition: all 0.2s;
@@ -295,114 +277,87 @@
       color: #fff;
     }
 
-    .random-btn {
-      flex: 1;
-      background: linear-gradient(135deg, #79f7ff, #00d2ff);
-      color: #000;
-      border: none;
-      border-radius: 12px;
-      font-weight: 800;
-      font-size: 16px;
-      text-transform: uppercase;
-      cursor: pointer;
-      min-height: 100px;
-      transition: all 0.2s;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
-    }
-
-    .random-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-      filter: brightness(1.1);
-    }
-
     .preview-box {
-      flex: 1;
       background: rgba(0, 0, 0, 0.4);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      min-height: 100px;
-      position: relative;
-      overflow: hidden;
+      border-radius: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      min-height: 60px;
     }
 
-    .preview-circle {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.05);
-      display: grid;
-      place-items: center;
+    /* 나란히 배치되는 액션 버튼 행 */
+    .action-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
     }
+
+    .action-btn {
+      flex: 1;
+      padding: 14px 10px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-radius: 10px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+    }
+
+    .btn-random {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .btn-random:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #79f7ff, #00d2ff);
+      color: #000;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+    }
+    .btn-start:hover {
+      box-shadow: 0 0 25px var(--neon-cyan);
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+    .btn-start:active { transform: translateY(1px); }
 
     .controls-note {
-      margin: 0;
-      padding: 16px;
+      margin-top: 16px;
+      padding: 12px;
       border-radius: 8px;
       background: rgba(0, 0, 0, 0.4);
       border: 1px dashed rgba(255, 255, 255, 0.2);
       color: #cbd5e1;
-      font-size: 13px;
-      line-height: 1.6;
+      font-size: 12px;
+      line-height: 1.5;
       text-align: left;
     }
 
     .controls-note b { color: var(--neon-cyan); }
 
-    .button-row {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 20px;
-    }
-
-    .primary-btn {
-      appearance: none;
-      border: 0;
-      border-radius: 12px;
-      padding: 14px 32px;
+    .sound-toggle {
+      background: transparent;
+      border: none;
+      color: var(--muted);
       font-family: 'Outfit', sans-serif;
-      font-size: 16px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
-      color: #000;
-      background: linear-gradient(135deg, #79f7ff, #00d2ff);
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
-      transition: all 0.15s ease;
-    }
-
-    .primary-btn:hover {
-      box-shadow: 0 0 25px var(--neon-cyan);
-      transform: translateY(-2px);
-      filter: brightness(1.1);
-    }
-    .primary-btn:active { transform: translateY(1px); }
-
-    .secondary-btn {
-      appearance: none;
-      padding: 14px 24px;
-      font-family: 'Outfit', sans-serif;
-      font-size: 16px;
-      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      cursor: pointer;
-      color: var(--text);
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
-      transition: all 0.15s ease;
+      margin-top: 12px;
+      transition: color 0.2s;
     }
-    .secondary-btn:hover {
-      background: rgba(255, 255, 255, 0.15);
-      color: #fff;
-    }
+    .sound-toggle:hover { color: #fff; }
 
     .rank-text {
       font-size: 22px;
@@ -436,35 +391,27 @@
       100% { opacity: 0.6; }
     }
 
-    /* 모바일 세로모드(Portrait) 및 가로폭이 좁은 기기 대응 */
+    /* 모바일 세로/가로 환경 완벽 대응 */
     @media (max-width: 768px) {
       .topbar { top: 10px; left: 10px; right: 10px; flex-direction: column; }
       .badge { font-size: 12px; padding: 6px 10px; }
       .progress-wrap { width: 100%; min-width: 150px; padding: 10px; }
       .hint { bottom: max(15px, env(safe-area-inset-bottom)); }
-      .card { padding: 20px; max-height: 85vh; }
-      .title { font-size: 26px; margin-bottom: 5px; }
-      .subtitle { font-size: 13px; margin-bottom: 12px; line-height: 1.4; }
-      .lobby-grid { grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; }
+      .card { padding: 20px; width: 92vw; }
+      .title { font-size: 28px; }
+      /* 모바일에서는 세로 공간 확보를 위해 서브타이틀 및 조작법 숨김 */
+      .hide-mobile { display: none !important; }
+      .lobby-grid { gap: 10px; margin-bottom: 12px; }
       .lobby-input, .lobby-select { padding: 10px; font-size: 14px; }
-      .random-btn { min-height: 48px; font-size: 14px; }
-      .preview-box { min-height: 80px; }
-      .preview-circle { width: 64px; height: 64px; }
-      .controls-note { padding: 12px; font-size: 12px; margin: 10px 0; }
-      .primary-btn, .secondary-btn { width: 100%; padding: 12px; font-size: 14px; }
-      .button-row { margin-top: 15px; gap: 8px; }
+      .action-btn { padding: 12px 8px; font-size: 14px; }
     }
 
-    /* 모바일 가로모드(Landscape) 등 높이가 낮은 기기 대응 */
     @media (max-height: 600px) and (orientation: landscape) {
-      .card { padding: 15px 24px; max-height: 90vh; }
-      .title { font-size: 24px; margin-bottom: 4px; }
-      .subtitle { display: none; } /* 화면 높이 확보를 위해 부제 숨김 */
-      .lobby-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-      .random-btn { min-height: 40px; }
-      .preview-box { min-height: 60px; }
-      .controls-note { padding: 8px 12px; font-size: 12px; margin: 8px 0; }
-      .button-row { margin-top: 10px; }
+      .card { padding: 16px 24px; }
+      .hide-mobile { display: none !important; }
+      .lobby-grid { gap: 8px; margin-bottom: 8px; }
+      .lobby-input, .lobby-select { padding: 8px; }
+      .action-btn { padding: 10px 8px; }
     }
   </style>
 </head>
@@ -506,78 +453,55 @@
 
         <div id="center-overlay">
           
-          <!-- LOBBY : PLAYER SETUP -->
+          <!-- 통합 LOBBY (스크롤 방지 압축 레이아웃) -->
           <div id="setupCard" class="card">
-            <h1 class="title">Neon Pulse</h1>
-            <p class="subtitle">대규모 시스템 업데이트가 적용된 확장 버전입니다.</p>
+            <h1 class="title">NEON PULSE</h1>
+            <p class="subtitle hide-mobile">자신만의 캐릭터를 커스텀하고 게임을 시작하세요!</p>
             
             <div class="lobby-grid">
-                <div class="lobby-col">
-                    <div class="input-group">
-                        <label>Nickname</label>
-                        <input type="text" id="nicknameInput" class="lobby-input" placeholder="PLAYER" maxlength="12" value="PLAYER" autocomplete="off" />
-                    </div>
-                    <div class="input-group">
-                        <label>Body Color</label>
-                        <select id="colorSelect" class="lobby-select"></select>
-                    </div>
-                    <button id="randomizeBtn" class="random-btn">Random Skin</button>
+                <div class="input-group span-2">
+                    <label>Nickname</label>
+                    <input type="text" id="nicknameInput" class="lobby-input" placeholder="PLAYER" maxlength="12" value="PLAYER" autocomplete="off" />
                 </div>
-                <div class="lobby-col">
-                    <div class="input-group">
-                        <label>Face</label>
-                        <select id="faceSelect" class="lobby-select"></select>
-                    </div>
-                    <div class="input-group">
-                        <label>Skin Shape</label>
-                        <select id="shapeSelect" class="lobby-select"></select>
-                    </div>
-                    <div class="preview-box">
-                        <div class="preview-circle">
-                            <canvas id="previewCanvas" width="60" height="60"></canvas>
-                        </div>
-                    </div>
+                <div class="input-group">
+                    <label>Body Color</label>
+                    <select id="colorSelect" class="lobby-select"></select>
+                </div>
+                <div class="input-group">
+                    <label>Skin Shape</label>
+                    <select id="shapeSelect" class="lobby-select"></select>
+                </div>
+                <div class="input-group">
+                    <label>Face</label>
+                    <select id="faceSelect" class="lobby-select"></select>
+                </div>
+                <div class="preview-box">
+                    <canvas id="previewCanvas" width="60" height="60"></canvas>
                 </div>
             </div>
 
-            <div class="controls-note">
+            <div class="action-row">
+              <button id="randomizeBtn" class="action-btn btn-random">Random Skin</button>
+              <button id="startGameBtn" class="action-btn btn-start">Start Game</button>
+            </div>
+
+            <div class="controls-note hide-mobile">
               PC: <b>Space / Click / ↑</b> &nbsp;&nbsp;|&nbsp;&nbsp; Mobile: <b>화면 터치</b><br>
-              공중에서 한 번 더 누르면 <b>다단 점프</b><br>
-              <b>R</b> 재시작 / <b>P</b> 일시정지<br><br>
-              <span style="color:#aaa; font-size:12px;">신규 요소: 네온 스타, 중력 반전 포탈, 대시 장벽, 비행 모드 등<br>
-              비행 아이템은 획득 후 누르고 있어야 상승합니다.</span>
+              공중에서 한 번 더 누르면 <b>다단 점프</b> (R 재시작 / P 일시정지)<br>
+              <span style="color:#aaa;">비행 아이템은 획득 후 누르고 있어야 상승합니다.</span>
             </div>
-            
-            <div class="button-row">
-              <button id="saveSetupBtn" class="primary-btn">SAVE & NEXT</button>
-            </div>
-          </div>
 
-          <!-- MAIN MENU -->
-          <div id="menuCard" class="card hidden">
-            <h1 class="title">Neon Pulse</h1>
-            <p class="subtitle" id="greetingText">Welcome, Player!</p>
-            <div class="controls-note">
-              <b>[기본 조작]</b> Space / 터치 (화면 클릭)<br>
-              <b>[점수 획득]</b> 이동 거리 + 별(⭐) 1개당 1000점!<br>
-              <b>[중력 포탈]</b> 🌀 진입 시 중력 반전 (현재 경로에 맞춰 장애물 동적 생성!)<br>
-              <b>[대시 & 쉴드]</b> 대시 아이템(>>) 획득 시 장벽 파괴 돌진<br>
-              <b>[비행 아이템]</b> 획득 후 꾹 누르고 있어야 상승!
-            </div>
-            <div class="button-row">
-              <button id="startBtn" class="primary-btn">START SYSTEM</button>
-              <button id="muteBtn" class="secondary-btn">SOUND: ON</button>
-            </div>
+            <button id="muteBtn" class="sound-toggle">🔊 Sound: ON</button>
           </div>
 
           <!-- RESULT SCREEN -->
           <div id="resultCard" class="card hidden">
             <h2 class="title" id="resultTitle">SYSTEM FAILED</h2>
-            <p class="subtitle" id="resultText">진행도: 42%</p>
+            <p class="subtitle hide-mobile" id="resultText">진행도: 42%</p>
             <div class="rank-text" id="resultRank">Rank: #??? (Top ?%)</div>
-            <div class="button-row" style="margin-top: 30px;">
-              <button id="retryBtn" class="primary-btn">RETRY SEQUENCE</button>
-              <button id="backMenuBtn" class="secondary-btn">MAIN MENU</button>
+            <div class="action-row" style="margin-top: 20px;">
+              <button id="retryBtn" class="action-btn btn-start">RETRY</button>
+              <button id="backMenuBtn" class="action-btn btn-random">MAIN MENU</button>
             </div>
           </div>
 
@@ -619,7 +543,6 @@
         progText: document.getElementById('progressText'),
         progFill: document.getElementById('progressFill'),
         setupCard: document.getElementById('setupCard'),
-        menuCard: document.getElementById('menuCard'),
         resultCard: document.getElementById('resultCard'),
         resTitle: document.getElementById('resultTitle'),
         resText: document.getElementById('resultText'),
@@ -631,13 +554,11 @@
         shapeSel: document.getElementById('shapeSelect'),
         
         btnRandom: document.getElementById('randomizeBtn'),
-        btnSave: document.getElementById('saveSetupBtn'),
-        btnStart: document.getElementById('startBtn'),
+        btnStart: document.getElementById('startGameBtn'),
         btnRetry: document.getElementById('retryBtn'),
         btnMenu: document.getElementById('backMenuBtn'),
         btnMute: document.getElementById('muteBtn'),
         
-        greeting: document.getElementById('greetingText'),
         fuelWrap: document.getElementById('fuelWrap'),
         fuelFill: document.getElementById('fuelFill'),
         fuelText: document.getElementById('fuelText')
@@ -844,26 +765,26 @@
         pCtx.restore();
       }
 
-      function saveSetup() {
-        let name = UI.nickname.value.trim();
-        if (name.length === 0) name = "NeonPlayer";
-        playerDesign.nickname = name;
-        UI.greeting.textContent = `Welcome, ${playerDesign.nickname}!`;
-        showMenu();
+      function showSetup() {
+        game.state = 'setup';
+        UI.resultCard.classList.add('hidden');
+        UI.setupCard.classList.remove('hidden');
       }
 
       function showMenu() {
-        game.state = 'menu';
-        UI.setupCard.classList.add('hidden');
-        UI.resultCard.classList.add('hidden');
-        UI.menuCard.classList.remove('hidden');
+        showSetup(); // 메인 메뉴를 건너뛰고 바로 셋업(통합 로비)으로 진입
       }
 
-      function showSetup() {
-        game.state = 'setup';
-        UI.menuCard.classList.add('hidden');
+      function startGame() {
+        playerDesign.nickname = UI.nickname.value.trim() || "PLAYER";
+        playerDesign.colorName = UI.colorSel.value;
+        playerDesign.shape = UI.shapeSel.value;
+        playerDesign.face = UI.faceSel.value;
+
+        UI.setupCard.classList.add('hidden');
         UI.resultCard.classList.add('hidden');
-        UI.setupCard.classList.remove('hidden');
+        resetRun(false);
+        game.state = 'playing';
       }
 
       // ==========================================
@@ -1037,19 +958,6 @@
         UI.fuelWrap.classList.remove('active');
         
         updateProgress();
-      }
-
-      function startGame() {
-        playerDesign.nickname = UI.nickname.value.trim() || "PLAYER";
-        playerDesign.colorName = UI.colorSel.value;
-        playerDesign.shape = UI.shapeSel.value;
-        playerDesign.face = UI.faceSel.value;
-
-        UI.setupCard.classList.add('hidden');
-        UI.menuCard.classList.add('hidden');
-        UI.resultCard.classList.add('hidden');
-        resetRun(false);
-        game.state = 'playing';
       }
 
       function showResult(isClear) {
@@ -1443,7 +1351,6 @@
 
       function updateTrail(dt) {
         if (!player.isFlying && !player.isDashing) {
-             // 이동 속도에 맞춰 바퀴처럼 굴러가기 (v = r * w)
              const radius = player.w / 2;
              const angularVel = world.speed / radius;
              player.rotation += angularVel * dt * (player.gravityFlipped ? -1 : 1);
@@ -1510,7 +1417,7 @@
         } else if (game.state === 'dead' || game.state === 'clear') {
           game.timer -= dt;
           if (game.timer <= 0) {
-             // UI를 안전하게 띄울 수 있도록 대기 타이머
+             // UI 대기 처리
           }
         }
       }
@@ -1849,12 +1756,11 @@
       window.addEventListener('pointercancel', handleRelease, pOpts);
 
       UI.btnRandom.addEventListener('click', randomizeDesign);
-      UI.btnSave.addEventListener('click', saveSetup);
       UI.btnStart.addEventListener('click', () => { tryUnlockAudio(); startGame(); });
       UI.btnRetry.addEventListener('click', () => { tryUnlockAudio(); UI.resultCard.classList.add('hidden'); resetRun(true); game.state = 'playing'; });
       UI.btnMenu.addEventListener('click', () => { resetRun(false); showMenu(); });
       UI.btnMute.addEventListener('click', () => {
-        game.muted = !game.muted; UI.btnMute.textContent = `SOUND: ${game.muted ? 'OFF' : 'ON'}`;
+        game.muted = !game.muted; UI.btnMute.textContent = `🔊 SOUND: ${game.muted ? 'OFF' : 'ON'}`;
       });
 
       function resize() {
