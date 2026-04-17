@@ -192,6 +192,8 @@
 
     .card {
       width: min(90vw, 600px);
+      max-height: 90vh; /* 반응형 화면 대응: 높이 제한 */
+      overflow-y: auto; /* 내용이 넘칠 경우 스크롤 생성 */
       padding: 32px;
       border-radius: 16px;
       background: linear-gradient(145deg, rgba(20, 20, 30, 0.85), rgba(10, 10, 15, 0.95));
@@ -202,6 +204,19 @@
       pointer-events: auto;
       transform: translateY(0);
       transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* 카드 커스텀 스크롤바 디자인 */
+    .card::-webkit-scrollbar {
+      width: 6px;
+    }
+    .card::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+    }
+    .card::-webkit-scrollbar-thumb {
+      background: var(--neon-cyan);
+      border-radius: 8px;
     }
 
     .card.hidden {
@@ -421,16 +436,35 @@
       100% { opacity: 0.6; }
     }
 
+    /* 모바일 세로모드(Portrait) 및 가로폭이 좁은 기기 대응 */
     @media (max-width: 768px) {
       .topbar { top: 10px; left: 10px; right: 10px; flex-direction: column; }
       .badge { font-size: 12px; padding: 6px 10px; }
       .progress-wrap { width: 100%; min-width: 150px; padding: 10px; }
       .hint { bottom: max(15px, env(safe-area-inset-bottom)); }
-      .card { padding: 24px; }
-      .lobby-grid { grid-template-columns: 1fr; gap: 12px; }
-      .random-btn { min-height: 60px; }
-      .preview-box { min-height: 120px; }
-      .primary-btn, .secondary-btn { width: 100%; }
+      .card { padding: 20px; max-height: 85vh; }
+      .title { font-size: 26px; margin-bottom: 5px; }
+      .subtitle { font-size: 13px; margin-bottom: 12px; line-height: 1.4; }
+      .lobby-grid { grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; }
+      .lobby-input, .lobby-select { padding: 10px; font-size: 14px; }
+      .random-btn { min-height: 48px; font-size: 14px; }
+      .preview-box { min-height: 80px; }
+      .preview-circle { width: 64px; height: 64px; }
+      .controls-note { padding: 12px; font-size: 12px; margin: 10px 0; }
+      .primary-btn, .secondary-btn { width: 100%; padding: 12px; font-size: 14px; }
+      .button-row { margin-top: 15px; gap: 8px; }
+    }
+
+    /* 모바일 가로모드(Landscape) 등 높이가 낮은 기기 대응 */
+    @media (max-height: 600px) and (orientation: landscape) {
+      .card { padding: 15px 24px; max-height: 90vh; }
+      .title { font-size: 24px; margin-bottom: 4px; }
+      .subtitle { display: none; } /* 화면 높이 확보를 위해 부제 숨김 */
+      .lobby-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+      .random-btn { min-height: 40px; }
+      .preview-box { min-height: 60px; }
+      .controls-note { padding: 8px 12px; font-size: 12px; margin: 8px 0; }
+      .button-row { margin-top: 10px; }
     }
   </style>
 </head>
@@ -835,22 +869,22 @@
       // ==========================================
       // 4. DYNAMIC LEVEL GENERATION
       // ==========================================
-      const spike = (x, flip=false, w=40, h=40) => ({ type: flip ? 'spike_down' : 'spike', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#f0f' });
-      const ceilSpike = (x, w=40, h=40) => ({ type: 'spike_down', x, y: 50, w, h, color: '#f0f' }); 
-      const block = (x, flip=false, w=50, h=60) => ({ type: 'block', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#0ff' });
-      const ceilBlock = (x, w=50, h=60) => ({ type: 'block', x, y: 50, w, h, color: '#0ff' }); 
-      const superBlock = (x, flip=false, h=160) => ({ type: 'block', x, y: flip ? 50 : CONFIG.groundY - h, w: 50, h, color: '#b026ff' });
+      const spike = (x, flip=false, w=40, h=40) => ({ type: flip ? 'spike_down' : 'spike', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#f0f', fatalHit: false });
+      const ceilSpike = (x, w=40, h=40) => ({ type: 'spike_down', x, y: 50, w, h, color: '#f0f', fatalHit: false }); 
+      const block = (x, flip=false, w=50, h=60) => ({ type: 'block', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#0ff', fatalHit: false });
+      const ceilBlock = (x, w=50, h=60) => ({ type: 'block', x, y: 50, w, h, color: '#0ff', fatalHit: false }); 
+      const superBlock = (x, flip=false, h=160) => ({ type: 'block', x, y: flip ? 50 : CONFIG.groundY - h, w: 50, h, color: '#b026ff', fatalHit: false });
       
-      const plat = (x, y, w=180) => ({ type: 'platform', x, y, w, h: 20, color: '#39ff14' });
+      const plat = (x, y, w=180) => ({ type: 'platform', x, y, w, h: 20, color: '#39ff14', fatalHit: false });
       
       const orb = (x, y) => ({ type: 'orb', x, y, r: 24, w: 48, h: 48, used: false, color: '#ffea00' });
       const flightItem = (x, y) => ({ type: 'item_flight', x, y, r: 30, w: 60, h: 60, used: false, color: '#ffea00' });
-      const rhombus = (x, flip=false, size=60) => ({ type: 'rhombus', x, y: flip ? 50 : CONFIG.groundY - size, w: size, h: size, color: '#ff0055' });
-      const trap = (x, flip=false, w=80, h=80) => ({ type: 'trapezoid', narrow: flip ? 'bottom' : 'top', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#ff9d00' });
+      const rhombus = (x, flip=false, size=60) => ({ type: 'rhombus', x, y: flip ? 50 : CONFIG.groundY - size, w: size, h: size, color: '#ff0055', fatalHit: false });
+      const trap = (x, flip=false, w=80, h=80) => ({ type: 'trapezoid', narrow: flip ? 'bottom' : 'top', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#ff9d00', fatalHit: false });
       const star = (x, y) => ({ type: 'star', x, y, w: 30, h: 30, collected: false });
       const portalGrav = (x, y, dir) => ({ type: 'portal_grav', x, y, w: 60, h: 100, dir, used: false });
       const orbDash = (x, y) => ({ type: 'orb_dash', x, y, r: 24, w: 48, h: 48, used: false, color: '#ff0055' });
-      const glassWall = (x, flip=false, h=150) => ({ type: 'glass', x, y: flip ? 50 : CONFIG.groundY - h, w: 40, h, destroyed: false, color: '#ff0055' });
+      const glassWall = (x, flip=false, h=150) => ({ type: 'glass', x, y: flip ? 50 : CONFIG.groundY - h, w: 40, h, destroyed: false, color: '#ff0055', fatalHit: false });
 
       function generateNextChunk(cx, isFlipped, index) {
         const list = [];
@@ -1341,6 +1375,7 @@
                        ob.destroyed = true; createGlassShatter(sx, ob.y);
                        playSound(200, 0.15, 'square', 0.1); triggerShake(8, 0.1); continue;
                    } else {
+                       ob.fatalHit = true;
                        showResult(false); break;
                    }
                }
@@ -1354,6 +1389,7 @@
             if (fatalObstacles.includes(ob.type)) {
                const hitbox = getHitbox(ob, sx);
                if (checkCollision(pRect, hitbox)) {
+                 ob.fatalHit = true;
                  showResult(false); break;
                }
             }
