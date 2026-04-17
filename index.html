@@ -53,6 +53,17 @@
       overflow: hidden;
     }
 
+    /* 오락실 레트로 CRT 스캔라인 효과 */
+    #game-shell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+      background-size: 100% 4px;
+      pointer-events: none;
+      z-index: 50;
+    }
+
     canvas {
       display: block;
       background: transparent;
@@ -68,6 +79,7 @@
       position: absolute;
       inset: 0;
       pointer-events: none;
+      z-index: 100; /* 스캔라인 위로 UI 노출 */
     }
 
     .topbar {
@@ -79,7 +91,6 @@
       justify-content: space-between;
       align-items: flex-start;
       gap: 12px;
-      z-index: 10;
     }
 
     .panel {
@@ -139,6 +150,30 @@
       transition: width 0.1s linear;
     }
 
+    /* 전용 콤보 UI */
+    .combo-display {
+      position: absolute;
+      top: 90px;
+      right: 30px;
+      font-size: 42px;
+      font-weight: 800;
+      font-style: italic;
+      color: var(--neon-gold);
+      text-shadow: 0 0 15px var(--neon-gold), 2px 2px 0px rgba(0,0,0,0.8);
+      transition: opacity 0.3s, transform 0.1s;
+      opacity: 1;
+      transform: scale(1) rotate(-5deg);
+    }
+    .combo-display.hidden {
+      opacity: 0;
+      transform: scale(0.5) rotate(0deg);
+    }
+    .combo-display.pop {
+      transform: scale(1.3) rotate(-10deg);
+      color: var(--neon-pink);
+      text-shadow: 0 0 25px var(--neon-pink), 2px 2px 0px rgba(0,0,0,0.8);
+    }
+
     .fuel-wrap {
       position: absolute;
       top: 80px;
@@ -187,7 +222,7 @@
       display: grid;
       place-items: center;
       padding: 20px;
-      z-index: 20;
+      z-index: 200;
     }
 
     .card {
@@ -429,6 +464,7 @@
       .topbar { top: 10px; left: 10px; right: 10px; flex-direction: column; }
       .badge { font-size: 12px; padding: 6px 10px; }
       .progress-wrap { width: 100%; min-width: 150px; padding: 10px; }
+      .combo-display { top: 160px; right: 20px; font-size: 28px; }
       .hint { bottom: max(15px, env(safe-area-inset-bottom)); }
       .card { padding: 20px; width: 92vw; max-height: 85vh; overflow-y: auto; }
       .title { font-size: 28px; }
@@ -441,6 +477,7 @@
 
     @media (max-height: 600px) and (orientation: landscape) {
       .card { padding: 16px 24px; max-height: 90vh; overflow-y: auto; }
+      .combo-display { top: 80px; }
       .hide-mobile { display: none !important; }
       .lobby-grid { gap: 8px; margin-bottom: 8px; }
       .lobby-input, .lobby-select { padding: 8px; }
@@ -474,6 +511,9 @@
             </div>
           </div>
         </div>
+
+        <!-- 콤보 전용 HUD -->
+        <div id="comboDisplay" class="combo-display hidden">COMBO x2</div>
 
         <div class="panel fuel-wrap" id="fuelWrap">
           <div class="fuel-head">
@@ -520,8 +560,8 @@
 
             <div class="controls-note hide-mobile">
               PC: <b>Space / Click / ↑</b> &nbsp;&nbsp;|&nbsp;&nbsp; Mobile: <b>화면 터치</b><br>
-              공중에서 한 번 더 누르면 <b>다단 점프</b> (R 재시작 / P 일시정지)<br>
-              <span style="color:#aaa;">희귀 패턴: 별의 파도, 대시 돌파, 포탈 러시, 비행 터널이 등장합니다!</span>
+              <span style="color:var(--neon-green)">★ 점프 버퍼링 지원: 닿기 직전 미리 눌러도 즉시 점프!</span><br>
+              <span style="color:#aaa;">희귀 패턴: 별의 파도, 대시 돌파, 포탈 러시, 비행 터널</span>
             </div>
 
             <button id="muteBtn" class="sound-toggle">🔊 Sound: ON</button>
@@ -558,7 +598,7 @@
         width: 1280, height: 720, groundY: 580, playerX: 250,
         gravity: 3040, jumpForce: 980, flightForce: 6500, maxFallSpeed: 2000,
         coyoteTime: 0.12, baseSpeed: 500, maxSpeed: 1200, speedAccel: 15,
-        deathDelay: 1.2, // 죽었을 때 멈춤 시간을 조금 더 늘림 (감속 관찰용)
+        deathDelay: 1.2,
         dprMax: 2,
       };
 
@@ -579,6 +619,7 @@
         bestScore: document.getElementById('bestScoreLabel'),
         progText: document.getElementById('progressText'),
         progFill: document.getElementById('progressFill'),
+        comboDisplay: document.getElementById('comboDisplay'), // 콤보 HUD
         setupCard: document.getElementById('setupCard'),
         resultCard: document.getElementById('resultCard'),
         resTitle: document.getElementById('resultTitle'),
@@ -609,14 +650,15 @@
         state: 'setup', 
         attempts: 1, score: 0, stars: 0, bestScore: savedBest,
         currentLevel: 1, levelUpTimer: 0,
-        starCombo: 0, comboTimer: 0, // 콤보 시스템 변수
-        hitStop: 0, // 피드백용 히트 스탑
+        starCombo: 0, comboTimer: 0, 
+        hitStop: 0,
         timer: 0, muted: false, flash: 0, shakeTime: 0, shakeMag: 0, audioInit: false,
       };
 
       if (UI.bestScore) UI.bestScore.textContent = `BEST: ${game.bestScore}`;
 
-      const input = { pressed: false, justPressed: false };
+      // [개선] 점프 버퍼링(선입력) 시스템 도입을 위한 입력 구조체 변경
+      const input = { pressed: false, jumpBuffer: 0 };
 
       const CUSTOM_COLORS = {
           'Orange': '#ff9d00', 'White': '#ffffff', 'Cyan': '#0ff', 
@@ -644,7 +686,7 @@
 
       const world = {
         scrollX: 0, speed: CONFIG.baseSpeed,
-        obstacles: [], particles: [], bgParticles: [], floatingTexts: [], // 플로팅 텍스트 시스템
+        obstacles: [], particles: [], bgParticles: [], floatingTexts: [],
         themeColor: '#0ff', gridColor: 'rgba(0, 255, 255, 0.15)',
         pulseTime: 0, pulse: 1, lastGenX: 800, chunkIndex: 0 
       };
@@ -814,6 +856,7 @@
         game.state = 'setup';
         UI.resultCard.classList.add('hidden');
         UI.setupCard.classList.remove('hidden');
+        if (UI.comboDisplay) UI.comboDisplay.classList.add('hidden'); // 콤보 HUD 숨김
       }
 
       function startGame() {
@@ -858,7 +901,6 @@
         const mF = isFlipped;  
         const sF = !isFlipped; 
 
-        // 희귀 패턴 (15% 확률)
         if (index > 1 && Math.random() < 0.15) {
             const rareType = Math.random();
             
@@ -882,9 +924,9 @@
                     list.push(portalGrav(nextX, curF ? 50 : CONFIG.groundY - 100, curF ? 'down' : 'up'));
                     list.push(star(nextX + 300 * gapMulti, CONFIG.height / 2));
                     curF = !curF;
-                    nextX += 700 * gapMulti; // [개선] 포탈 러시 내 여백 확장
+                    nextX += 700 * gapMulti; 
                 }
-                nextX += baseGap * 1.5; // [개선] 포탈 러시 직후 안전 구간 대폭 확보
+                nextX += baseGap * 1.5; 
             } else {
                 list.push(flightItem(nextX, mF ? 150 : CONFIG.groundY - 150)); nextX += 800 * gapMulti;
                 for(let i=0; i<5; i++) {
@@ -898,7 +940,6 @@
             return { items: list, nextX: nextX }; 
         }
 
-        // 일반 무작위 패턴
         if (rand < 0.15) {
             list.push(spike(nextX, mF)); list.push(spike(nextX + 60, mF));
             list.push(star(nextX + 30, mF ? 130 : CONFIG.groundY - 130)); 
@@ -914,7 +955,7 @@
             list.push(block(nextX, sF, 50, 80));
             list.push(star(nextX + 25, sF ? 140 : CONFIG.groundY - 140));
             nextX += doubleJumpGap;
-            list.push(portalGrav(nextX, sF ? 50 : CONFIG.groundY - 100, sF ? 'down' : 'up')); nextX += baseGap * 1.5; // [개선] 포탈 직후 여유 공간 확보
+            list.push(portalGrav(nextX, sF ? 50 : CONFIG.groundY - 100, sF ? 'down' : 'up')); nextX += baseGap * 1.5; 
             list.push(spike(nextX, mF)); nextX += baseGap;
         } else if (rand < 0.75) {
             const h = 130 + Math.random() * 30;
@@ -1004,7 +1045,7 @@
         world.lastGenX = 1000; 
         world.chunkIndex = 0;
         world.particles = [];
-        world.floatingTexts = []; // 플로팅 텍스트 리셋
+        world.floatingTexts = [];
         world.pulseTime = 0;
         initBackgroundParticles();
         
@@ -1023,6 +1064,8 @@
         player.isDashing = false;
         player.dashTime = 0;
         
+        input.jumpBuffer = 0; // 버퍼 초기화
+
         if (UI.attempts) UI.attempts.textContent = `ATTEMPT ${game.attempts}`;
         if (UI.speed) UI.speed.textContent = `Speed: 1.0x`;
         if (UI.star) UI.star.textContent = `⭐ 0`;
@@ -1030,6 +1073,7 @@
         updateUIJump(2, 'var(--neon-purple)');
         if (UI.fuelWrap) UI.fuelWrap.classList.remove('active');
         if (UI.newRecord) UI.newRecord.classList.add('hidden');
+        if (UI.comboDisplay) UI.comboDisplay.classList.add('hidden');
         
         updateProgress();
       }
@@ -1038,10 +1082,11 @@
         game.state = 'dead';
         game.timer = CONFIG.deathDelay;
         game.flash = 1;
+        if (UI.comboDisplay) UI.comboDisplay.classList.add('hidden');
         
         const coreColor = CUSTOM_COLORS[playerDesign.colorName];
 
-        triggerShake(30, 0.5); // 사망 시 화면 더 크게 흔들림
+        triggerShake(30, 0.5); 
         createExplosion(player.x + player.w/2, player.y + player.h/2, coreColor);
         playSound(100, 0.4, 'sawtooth', 0.15); 
 
@@ -1087,7 +1132,6 @@
             player.maxJumps = 3;
             updateUIJump(3, '#ff0055');
             createExplosion(player.x, player.y, '#ff0055');
-            // [개선] 3단 점프 획득 피드백
             world.floatingTexts.push({ x: player.x, y: player.y - 50, text: 'TRIPLE JUMP UNLOCKED!', color: '#ff0055', life: 2.0 });
         }
       }
@@ -1108,6 +1152,17 @@
 
       function spawnFloatingText(text, x, y, color) {
           world.floatingTexts.push({ text, x, y, color, life: 1.2 });
+      }
+
+      function triggerComboUI() {
+          if (game.starCombo > 1 && UI.comboDisplay) {
+              UI.comboDisplay.textContent = `COMBO x${game.starCombo}!`;
+              UI.comboDisplay.classList.remove('hidden');
+              // 애니메이션 리플로우(Reflow)를 통한 Pop 이펙트 재실행
+              UI.comboDisplay.classList.remove('pop');
+              void UI.comboDisplay.offsetWidth; 
+              UI.comboDisplay.classList.add('pop');
+          }
       }
 
       function createDust(x, y, color='#fff') {
@@ -1227,7 +1282,6 @@
         } else if (ob.type === 'platform') {
             hit.x += 6; hit.w -= 12; hit.y += 6; hit.h -= 12;
         } else if (ob.type === 'star') {
-            // [개선] 별 획득 판정 대폭 완화 (+20px 여유)
             hit.x -= 10; hit.w += 20; hit.y -= 10; hit.h += 20;
         } else {
             hit.x += 4; hit.w -= 8; hit.y += 4; hit.h -= 8;
@@ -1237,6 +1291,8 @@
 
       function handlePlayerInput(dt) {
         const pRect = { x: player.x + 4, y: player.y + 4, w: player.w - 8, h: player.h - 8 };
+
+        if (input.jumpBuffer > 0) input.jumpBuffer -= dt;
 
         if (player.isFlying) {
              player.flightTime -= dt;
@@ -1259,8 +1315,8 @@
              if (Math.random() < 0.5) createDust(player.x, player.y + player.h/2, '#ff0055');
              if (player.dashTime <= 0) player.isDashing = false;
         } else {
-             if (input.justPressed) {
-                input.justPressed = false;
+             // [개선] 점프 버퍼링 시스템: 0.15초 이내에 눌러둔 키가 있으면 동작 실행
+             if (input.jumpBuffer > 0) {
                 let hitAction = false;
 
                 for (const ob of world.obstacles) {
@@ -1271,14 +1327,22 @@
                       ob.used = true; player.jumps = 1; doJump(true); 
                       createExplosion(sx, ob.y, '#ffea00');
                       triggerShake(5, 0.1); playSound(600, 0.15, 'triangle', 0.05);
-                      hitAction = true; break;
+                      hitAction = true; 
+                      input.jumpBuffer = 0; // 버퍼 소모
+                      break;
                     }
                   }
                 }
                 
                 if (!hitAction) {
-                  if (player.grounded || player.coyote > 0) doJump(false); 
-                  else if (player.jumps < player.maxJumps) doJump(true); 
+                  if (player.grounded || player.coyote > 0) {
+                      doJump(false); 
+                      input.jumpBuffer = 0; // 버퍼 소모
+                  }
+                  else if (player.jumps < player.maxJumps && !player.grounded) {
+                      doJump(true); 
+                      input.jumpBuffer = 0; // 버퍼 소모
+                  }
                 }
              }
         }
@@ -1329,12 +1393,13 @@
                     playSound(900, 0.1, 'sine', 0.1);
                     createRing(sx + ob.w/2, ob.y + ob.h/2, '#ffea00');
                     
-                    // [개선] 콤보 시스템 피드백
                     game.starCombo++;
                     game.comboTimer = 2.0; 
+                    triggerComboUI(); // 콤보 HUD 업데이트
+                    
                     const bonus = 350 + (game.starCombo * 50);
                     game.score += bonus;
-                    spawnFloatingText(`+${bonus} ${game.starCombo > 1 ? 'x'+game.starCombo : ''}`, sx, ob.y - 20, '#ffea00');
+                    spawnFloatingText(`+${bonus}`, sx, ob.y - 20, '#ffea00');
                 }
             }
 
@@ -1389,13 +1454,12 @@
                        createGlassShatter(sx, ob.y);
                        playSound(200, 0.15, 'square', 0.1); 
                        triggerShake(8, 0.1); 
-                       // [개선] 대시 브레이크 보상
                        game.score += 500;
                        spawnFloatingText('+500 BREAK!', sx, ob.y - 30, '#00ffff');
                        continue;
                    } else {
                        ob.fatalHit = true;
-                       game.hitStop = 0.1; // [개선] 죽음 히트 스탑
+                       game.hitStop = 0.1; 
                        showResult(); break;
                    }
                }
@@ -1409,7 +1473,7 @@
             if (fatalObstacles.includes(ob.type)) {
                if (checkCollision(pRect, hitbox)) {
                  ob.fatalHit = true;
-                 game.hitStop = 0.1; // [개선] 죽음 히트 스탑
+                 game.hitStop = 0.1; 
                  showResult(); break;
                }
             }
@@ -1425,9 +1489,13 @@
         if (game.flash > 0) game.flash = Math.max(0, game.flash - dt * 2);
         if (game.shakeTime > 0) game.shakeTime -= dt;
         if (game.levelUpTimer > 0) game.levelUpTimer -= dt;
+        
         if (game.comboTimer > 0) {
             game.comboTimer -= dt;
-            if (game.comboTimer <= 0) game.starCombo = 0;
+            if (game.comboTimer <= 0) {
+                game.starCombo = 0;
+                if (UI.comboDisplay) UI.comboDisplay.classList.add('hidden');
+            }
         }
 
         world.pulseTime += dt;
@@ -1435,10 +1503,9 @@
         const beatPhase = (world.pulseTime % beatInterval) / beatInterval;
         world.pulse = 1 + Math.max(0, 1 - beatPhase * 4) * 0.15; 
 
-        // 플로팅 텍스트 업데이트
         for (let i = world.floatingTexts.length - 1; i >= 0; i--) {
             const ft = world.floatingTexts[i];
-            ft.y -= 40 * dt; // 위로 떠오름
+            ft.y -= 40 * dt; 
             ft.life -= dt;
             if (ft.life <= 0) world.floatingTexts.splice(i, 1);
         }
@@ -1499,17 +1566,15 @@
       }
 
       function update(dt) {
-        // [개선] 히트 스탑(화면 일시 정지) 처리
         if (game.hitStop > 0) {
             game.hitStop -= dt;
-            return; // 논리 업데이트 정지
+            return; 
         }
 
-        // [개선] 죽었을 때 급격한 감속 (슬로우 모션)
         let effDt = dt;
         if (game.state === 'dead') {
-            world.speed *= 0.95; // 멈출때까지 감속
-            effDt *= 0.5; // 애니메이션 느리게
+            world.speed *= 0.95; 
+            effDt *= 0.5; 
         }
 
         updateEffects(effDt);
@@ -1568,10 +1633,41 @@
       // ==========================================
       // 8. RENDER LOGIC
       // ==========================================
+      function drawParallaxCity() {
+          // [개선] 속도감이 느껴지는 다중 스크롤 파럴랙스(Parallax) 시티 실루엣
+          ctx.fillStyle = '#0a0b10';
+          const offset1 = world.scrollX * 0.15;
+          for(let i = -1; i <= CONFIG.width / 80 + 1; i++) {
+              const globalIdx = Math.floor(offset1 / 80) + i;
+              // 인덱스 기반 절차적 높이 생성
+              const h = 100 + Math.sin(globalIdx * 12.34) * 80 + Math.cos(globalIdx * 4.5) * 40;
+              const w = 60 + Math.sin(globalIdx * 7.8) * 20;
+              const x = - (offset1 % 80) + i * 80;
+              ctx.fillRect(x, CONFIG.groundY - h, w, h);
+          }
+
+          ctx.fillStyle = '#0f111a';
+          ctx.strokeStyle = world.themeColor;
+          ctx.lineWidth = 1;
+          const offset2 = world.scrollX * 0.35;
+          for(let i = -1; i <= CONFIG.width / 150 + 1; i++) {
+              const globalIdx = Math.floor(offset2 / 150) + i;
+              const h = 50 + Math.abs(Math.sin(globalIdx * 8.1)) * 120;
+              const w = 80;
+              const x = - (offset2 % 150) + i * 150;
+              ctx.fillRect(x, CONFIG.groundY - h, w, h);
+              ctx.globalAlpha = 0.3;
+              ctx.strokeRect(x, CONFIG.groundY - h, w, h);
+              ctx.globalAlpha = 1;
+          }
+      }
+
       function drawBackground() {
-        ctx.fillStyle = '#05050a'; ctx.fillRect(0, 0, CONFIG.width, CONFIG.height);
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = '#050508'; ctx.fillRect(0, 0, CONFIG.width, CONFIG.height);
         
+        drawParallaxCity(); // 시티 실루엣 렌더링
+
+        ctx.fillStyle = '#fff';
         world.bgParticles.forEach(p => { 
             ctx.globalAlpha = p.speed; 
             const speedStretch = (world.speed / CONFIG.baseSpeed) * (player.isDashing ? 3 : 1);
@@ -1772,8 +1868,6 @@
       }
 
       function drawPlayer() {
-        // [개선] 죽었을 때 플레이어가 안 그려지던 부분 수정(사망 연출을 위해 그림)
-        
         player.trail.forEach(t => {
           ctx.save();
           ctx.translate(t.x + player.w/2, t.y + player.h/2);
@@ -1797,7 +1891,6 @@
         if (player.isFlying) currentColor = '#ffea00';
         else if (player.isDashing) currentColor = '#ff0055';
 
-        // 죽었을 때는 캐릭터를 검게, 혹은 깜빡이게 처리
         if (game.state === 'dead') {
              ctx.globalAlpha = 0.5;
              currentColor = '#fff';
@@ -1898,7 +1991,9 @@
       }
 
       function handlePress() {
-        input.pressed = true; input.justPressed = true; tryUnlockAudio();
+        input.pressed = true; 
+        input.jumpBuffer = 0.15; // [개선] 0.15초 (150ms) 점프 선입력 버퍼 
+        tryUnlockAudio();
         if (game.state === 'setup' || game.state === 'menu') startGame();
         else if (game.state === 'dead' || game.state === 'clear') { resetRun(true); UI.resultCard.classList.add('hidden'); game.state = 'playing'; }
       }
