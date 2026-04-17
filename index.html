@@ -383,6 +383,28 @@
       animation: pulse 2s infinite;
     }
 
+    .credit {
+      position: absolute;
+      bottom: 15px;
+      right: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.5px;
+      pointer-events: auto;
+      z-index: 100;
+      transition: color 0.3s ease;
+    }
+    
+    .credit:hover {
+      color: var(--neon-cyan);
+      text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+    }
+
+    .credit span {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
     @keyframes pulse {
       0% { opacity: 0.6; }
       50% { opacity: 1; box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); }
@@ -400,6 +422,7 @@
       .lobby-grid { gap: 10px; margin-bottom: 12px; }
       .lobby-input, .lobby-select { padding: 10px; font-size: 14px; }
       .action-btn { padding: 12px 8px; font-size: 14px; }
+      .credit { font-size: 11px; bottom: 10px; right: 15px; }
     }
 
     @media (max-height: 600px) and (orientation: landscape) {
@@ -502,6 +525,8 @@
         </div>
 
         <div class="hint" id="hintText">Tap / Space to Jump · R to Retry</div>
+        
+        <div class="credit">Created by <span>[max / kdc916@naver.com]</span></div>
       </div>
     </div>
   </div>
@@ -804,93 +829,156 @@
         const rand = Math.random();
         const mF = isFlipped;  
         const sF = !isFlipped; 
-        
-        if (rand < 0.12) {
-            list.push(spike(nextX, mF)); list.push(spike(nextX + 40, mF));
-            list.push(star(nextX + 20, mF ? 130 : CONFIG.groundY - 130)); 
-            nextX += baseGap;
-        } else if (rand < 0.24) {
-            list.push(rhombus(nextX, mF, 60 + Math.random()*20)); nextX += baseGap;
-        } else if (rand < 0.36) {
-            list.push(orbDash(nextX, mF ? 140 : CONFIG.groundY - 140));
-            list.push(glassWall(nextX + 300, mF, 250));
+
+        if (index === 0) {
+            list.push(spike(nextX, false)); nextX += baseGap;
+            list.push(spike(nextX, false)); list.push(star(nextX + 10, CONFIG.groundY - 100)); nextX += baseGap;
+            list.push(block(nextX, false, 80, 50)); nextX += baseGap;
+            // 2단 점프로 충분히 넘을 수 있도록 튜토리얼 블록 높이 완화 (160 -> 130)
+            list.push(superBlock(nextX, false, 130)); nextX += doubleJumpGap;
+        }
+        else if (index === 1) {
+            list.push(orbDash(nextX, CONFIG.groundY - 120)); 
+            list.push(glassWall(nextX + 250, false, 200)); 
+            list.push(star(nextX + 300, CONFIG.groundY - 100)); nextX += doubleJumpGap;
+        }
+        else if (index === 2) {
+            list.push(portalGrav(nextX, CONFIG.groundY - 150, 'up')); nextX += baseGap;
+            list.push(spike(nextX, false)); 
+            list.push(spike(nextX, true));  
+            list.push(star(nextX, 150)); 
             nextX += doubleJumpGap;
-        } else if (rand < 0.50) {
-            list.push(portalGrav(nextX, mF ? 50 : CONFIG.groundY - 100, mF ? 'down' : 'up')); nextX += baseGap;
-            list.push(block(nextX, sF, 50, 80));
-            list.push(star(nextX + 25, sF ? 140 : CONFIG.groundY - 140));
-            nextX += doubleJumpGap;
-            list.push(portalGrav(nextX, sF ? 50 : CONFIG.groundY - 100, sF ? 'down' : 'up')); nextX += baseGap;
-            list.push(spike(nextX, mF)); nextX += baseGap;
-        } else if (rand < 0.65) {
-            list.push(superBlock(nextX, mF, 200 + Math.random()*60)); 
-            list.push(star(nextX + 5, mF ? 300 : CONFIG.groundY - 300));
-            nextX += doubleJumpGap;
-        } else if (rand < 0.75) {
-            list.push(trap(nextX, mF, 80, 80)); 
-            list.push(plat(nextX + 120, mF ? 140 : CONFIG.groundY - 140, 180));
-            list.push(spike(nextX + 150, mF)); 
-            nextX += doubleJumpGap;
-        } else if (rand < 0.85) {
-            list.push(flightItem(nextX, mF ? 100 : CONFIG.groundY - 100)); nextX += 800; 
-            const flightLen = 2 + Math.floor(Math.random() * 2);
-            for (let j = 0; j < flightLen; j++) {
-                list.push(spike(nextX, mF, 200, 50));
-                if (j > 0) list.push(trap(nextX + 50, mF, 100, 160));
+            list.push(portalGrav(nextX, 50, 'down')); nextX += baseGap;
+        }
+        else if (index === 3) {
+            list.push(flightItem(nextX, CONFIG.groundY - 150)); nextX += 800; 
+            for (let i=0; i<4; i++) {
+                list.push(spike(nextX, false, 150, 40)); 
+                if (i > 0) list.push(spike(nextX, true, 150, 40)); 
+                
+                if (i%2 === 1) { 
+                    list.push(trap(nextX + 40, false, 70, 140)); 
+                    list.push(trap(nextX + 40, true, 70, 140)); 
+                } else { 
+                    list.push(plat(nextX + 50, CONFIG.groundY - 260, 180)); 
+                    list.push(star(nextX + 130, CONFIG.groundY - 310));
+                }
                 nextX += 600; 
             }
-            nextX += baseGap;
-        } else {
-            // ==========================================
-            // RARE PATTERNS (15% Chance) - 특별 희귀 구간
-            // ==========================================
-            const rareType = Math.random();
-            
-            if (rareType < 0.25) {
-                // 1. 보너스 스타 라인 (Star Wave)
-                for(let i=0; i<12; i++) {
-                    const yOffset = Math.sin(i * 0.6) * 120;
-                    list.push(star(nextX, (mF ? 200 : CONFIG.groundY - 200) + yOffset));
-                    nextX += 150;
-                }
+            nextX += baseGap; 
+        }
+        else {
+            if (rand < 0.12) {
+                list.push(spike(nextX, mF)); list.push(spike(nextX + 60, mF));
+                list.push(star(nextX + 30, mF ? 130 : CONFIG.groundY - 130)); 
                 nextX += baseGap;
-            } else if (rareType < 0.50) {
-                // 2. 대시 돌파 러시 (Dash Break Rush)
-                for(let i=0; i<5; i++) {
-                    list.push(orbDash(nextX, mF ? 140 : CONFIG.groundY - 140));
-                    list.push(glassWall(nextX + 300, mF, 250));
-                    nextX += 650;
-                }
-                nextX += baseGap;
-            } else if (rareType < 0.75) {
-                // 3. 포탈 러시 (Portal Zig-Zag)
-                let curF = mF;
-                for(let i=0; i<5; i++) {
-                    list.push(portalGrav(nextX, curF ? 50 : CONFIG.groundY - 100, curF ? 'down' : 'up'));
-                    list.push(star(nextX + 300, CONFIG.height / 2));
-                    curF = !curF;
-                    nextX += 600;
+            } else if (rand < 0.24) {
+                list.push(rhombus(nextX, mF, 60 + Math.random()*20)); nextX += baseGap;
+            } else if (rand < 0.36) {
+                list.push(orbDash(nextX, mF ? 140 : CONFIG.groundY - 140));
+                list.push(glassWall(nextX + 300, mF, 250));
+                nextX += doubleJumpGap;
+            } else if (rand < 0.50) {
+                list.push(portalGrav(nextX, mF ? 50 : CONFIG.groundY - 100, mF ? 'down' : 'up')); nextX += baseGap;
+                list.push(block(nextX, sF, 50, 80));
+                list.push(star(nextX + 25, sF ? 140 : CONFIG.groundY - 140));
+                nextX += doubleJumpGap;
+                list.push(portalGrav(nextX, sF ? 50 : CONFIG.groundY - 100, sF ? 'down' : 'up')); nextX += baseGap;
+                list.push(spike(nextX, mF)); nextX += baseGap;
+            } else if (rand < 0.65) {
+                const h = 130 + Math.random() * 30;
+                list.push(superBlock(nextX, mF, h)); 
+                list.push(star(nextX + 5, mF ? h + 60 : CONFIG.groundY - h - 60));
+                nextX += doubleJumpGap;
+            } else if (rand < 0.75) {
+                list.push(trap(nextX, mF, 80, 80)); 
+                list.push(plat(nextX + 150, mF ? 140 : CONFIG.groundY - 140, 180)); 
+                list.push(spike(nextX + 400, mF)); 
+                nextX += doubleJumpGap;
+            } else if (rand < 0.85) {
+                list.push(flightItem(nextX, mF ? 100 : CONFIG.groundY - 100)); nextX += 800; 
+                const flightLen = 2 + Math.floor(Math.random() * 2);
+                for (let j = 0; j < flightLen; j++) {
+                    if (j % 2 === 0) {
+                        list.push(spike(nextX, mF, 150, 50));
+                    } else {
+                        list.push(trap(nextX, mF, 100, 160));
+                    }
+                    list.push(star(nextX + 50, CONFIG.height / 2));
+                    nextX += 600; 
                 }
                 nextX += baseGap;
             } else {
-                // 4. 비행 터널 (Dangerous Flight Tunnel)
-                list.push(flightItem(nextX, mF ? 150 : CONFIG.groundY - 150)); nextX += 800;
-                for(let i=0; i<5; i++) {
-                    list.push(spike(nextX, false, 200, 100)); // 바닥 가시
-                    list.push(spike(nextX, true, 200, 100));  // 천장 가시
-                    list.push(star(nextX + 100, CONFIG.height / 2));
-                    nextX += 500;
+                // ==========================================
+                // RARE PATTERNS (15% Chance) - 특별 희귀 구간
+                // ==========================================
+                const rareType = Math.random();
+                
+                if (rareType < 0.25) {
+                    // 1. 보너스 스타 라인
+                    for(let i=0; i<12; i++) {
+                        const yOffset = Math.sin(i * 0.6) * 120;
+                        list.push(star(nextX, (mF ? 200 : CONFIG.groundY - 200) + yOffset));
+                        nextX += 150;
+                    }
+                    nextX += baseGap;
+                } else if (rareType < 0.50) {
+                    // 2. 대시 돌파 러시
+                    for(let i=0; i<5; i++) {
+                        list.push(orbDash(nextX, mF ? 140 : CONFIG.groundY - 140));
+                        list.push(glassWall(nextX + 300, mF, 250));
+                        nextX += 650;
+                    }
+                    nextX += baseGap;
+                } else if (rareType < 0.75) {
+                    // 3. 포탈 러시
+                    let curF = mF;
+                    for(let i=0; i<5; i++) {
+                        list.push(portalGrav(nextX, curF ? 50 : CONFIG.groundY - 100, curF ? 'down' : 'up'));
+                        list.push(star(nextX + 300, CONFIG.height / 2));
+                        curF = !curF;
+                        nextX += 600;
+                    }
+                    nextX += baseGap;
+                } else {
+                    // 4. 비행 터널
+                    list.push(flightItem(nextX, mF ? 150 : CONFIG.groundY - 150)); nextX += 800;
+                    for(let i=0; i<5; i++) {
+                        list.push(spike(nextX, false, 200, 100)); // 바닥 가시
+                        list.push(spike(nextX, true, 200, 100));  // 천장 가시
+                        list.push(star(nextX + 350, CONFIG.height / 2));
+                        nextX += 500;
+                    }
+                    nextX += baseGap;
                 }
-                nextX += baseGap;
+                return { items: list, nextX: nextX }; 
             }
-            return { items: list, nextX: nextX }; // 희귀 패턴일 때는 반대편 잡동사니 생성 스킵
-        }
 
-        // 일반 패턴일 때 반대편 빈 공간 채우기
-        if (Math.random() < 0.5) {
-            const subX = cx + Math.random() * (nextX - cx - 150);
-            if (Math.random() < 0.5) list.push(spike(subX, sF));
-            else list.push(block(subX, sF, 40, 40));
+            // 반대편 빈 공간 채우기 (겹침 완전 방지 로직 적용)
+            if (Math.random() < 0.5) {
+                let attempts = 0;
+                let placed = false;
+                while(attempts < 5 && !placed) {
+                    const subX = cx + 150 + Math.random() * (nextX - cx - 300);
+                    const testW = 40;
+                    
+                    let isOverlapping = false;
+                    for (const ob of list) {
+                        const obW = ob.w || (ob.r ? ob.r * 2 : 40);
+                        if (subX < ob.x + obW + 60 && subX + testW + 60 > ob.x) {
+                            isOverlapping = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!isOverlapping) {
+                        if (Math.random() < 0.5) list.push(spike(subX, sF));
+                        else list.push(block(subX, sF, 40, 40));
+                        placed = true;
+                    }
+                    attempts++;
+                }
+            }
         }
         
         return { items: list, nextX: nextX };
@@ -1234,10 +1322,12 @@
             if (ob.type === 'portal_grav' && !ob.used) {
                 const hitbox = { x: sx, y: ob.y, w: ob.w, h: ob.h };
                 if (checkCollision(pRect, hitbox)) {
-                    ob.used = true; player.gravityFlipped = (ob.dir === 'up'); player.vy = 0; 
+                    ob.used = true; player.gravityFlipped = (ob.dir === 'up'); 
+                    // 중력이 바뀌면 자석처럼 확 끌려가도록 초기 수직 속도(강력한 무게감) 부여
+                    player.vy = player.gravityFlipped ? -CONFIG.jumpForce * 1.5 : CONFIG.jumpForce * 1.5; 
                     playSound(700, 0.2, 'triangle', 0.05);
                     createExplosion(sx + ob.w/2, ob.y + ob.h/2, ob.dir==='up' ? '#00ffff' : '#ff9d00');
-                    triggerShake(5, 0.1);
+                    triggerShake(8, 0.15); // 진입 타격감(화면 흔들림) 살짝 증가
                 }
             }
 
