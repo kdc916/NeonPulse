@@ -79,20 +79,36 @@
       position: absolute;
       inset: 0;
       pointer-events: none;
-      z-index: 100; /* 스캔라인 위로 UI 노출 */
+      z-index: 100;
     }
 
-    /* [개선] 가로/세로 화면에 맞춰 하단 빈 공간 및 지하 영역을 활용하는 HUD 구조 */
-    .hud-bottom {
+    /* 좌측 하단 고정 (가로 모드용 안전 지대) */
+    .hud-left {
       position: absolute;
-      bottom: max(20px, env(safe-area-inset-bottom));
-      left: max(20px, env(safe-area-inset-left));
-      right: max(20px, env(safe-area-inset-right));
+      bottom: max(15px, env(safe-area-inset-bottom));
+      left: max(15px, env(safe-area-inset-left));
       display: flex;
-      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
       align-items: flex-end;
-      gap: 12px;
-      z-index: 10;
+    }
+
+    /* 우측 하단 고정 (가로 모드용 안전 지대) */
+    .hud-right {
+      position: absolute;
+      bottom: max(15px, env(safe-area-inset-bottom));
+      right: max(15px, env(safe-area-inset-right));
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .hud-right-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .panel {
@@ -104,12 +120,6 @@
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
-    .badge-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
     .badge {
       padding: 6px 14px;
       font-size: 14px;
@@ -118,11 +128,36 @@
       text-transform: uppercase;
       color: var(--neon-cyan);
       text-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* 세로 모드(Portrait) 및 좁은 화면 통합 대응 (UI 하단 중앙 빈공간으로 밀집) */
+    @media (max-width: 768px) and (orientation: portrait), (max-aspect-ratio: 1/1) {
+      .hud-left {
+        bottom: max(80px, env(safe-area-inset-bottom));
+        left: 0; right: 0;
+        justify-content: center;
+      }
+      .hud-right {
+        bottom: max(15px, env(safe-area-inset-bottom));
+        left: 0; right: 0;
+        align-items: center;
+      }
+      .hud-right-row {
+        justify-content: center;
+      }
+      .badge { font-size: 12px; padding: 6px 10px; }
+      .progress-wrap { width: 100%; max-width: 320px; padding: 10px; }
+      .combo-display { top: max(60px, env(safe-area-inset-top)) !important; font-size: 32px !important; }
     }
 
     .progress-wrap {
       min-width: 200px;
       padding: 12px 16px;
+      box-sizing: border-box;
+      flex-shrink: 0;
     }
 
     .progress-head {
@@ -152,11 +187,11 @@
       transition: width 0.1s linear;
     }
 
-    /* 전용 콤보 UI */
+    /* 콤보 UI */
     .combo-display {
       position: absolute;
       top: max(80px, env(safe-area-inset-top));
-      right: max(30px, env(safe-area-inset-right));
+      left: 50%;
       font-size: 42px;
       font-weight: 800;
       font-style: italic;
@@ -164,14 +199,14 @@
       text-shadow: 0 0 15px var(--neon-gold), 2px 2px 0px rgba(0,0,0,0.8);
       transition: opacity 0.3s, transform 0.1s;
       opacity: 1;
-      transform: scale(1) rotate(-5deg);
+      transform: translateX(-50%) scale(1) rotate(-5deg);
     }
     .combo-display.hidden {
       opacity: 0;
-      transform: scale(0.5) rotate(0deg);
+      transform: translateX(-50%) scale(0.5) rotate(0deg);
     }
     .combo-display.pop {
-      transform: scale(1.3) rotate(-10deg);
+      transform: translateX(-50%) scale(1.3) rotate(-10deg);
       color: var(--neon-pink);
       text-shadow: 0 0 25px var(--neon-pink), 2px 2px 0px rgba(0,0,0,0.8);
     }
@@ -411,7 +446,6 @@
       animation: blink 0.5s infinite alternate;
     }
 
-    /* 힌트 하단에서 상단 배치로 변경 (하단 UI와 겹침 방지) */
     .hint {
       position: absolute;
       top: 25%;
@@ -430,7 +464,10 @@
       animation: pulse 2s infinite;
     }
 
-    /* 크레딧 좌측 상단 여백으로 이동 (다른 UI 방해 방지) */
+    .hint.hidden {
+      display: none !important;
+    }
+
     .credit {
       position: absolute;
       top: max(15px, env(safe-area-inset-top));
@@ -464,38 +501,17 @@
       100% { opacity: 0.3; }
     }
 
-    /* 모바일 세로모드(Portrait) */
-    @media (max-width: 768px) and (orientation: portrait) {
-      .hud-bottom { 
-        flex-direction: column; 
-        align-items: center; 
-        bottom: max(25px, env(safe-area-inset-bottom));
-        gap: 15px; 
-      }
-      .badge-row { justify-content: center; }
-      .badge { font-size: 12px; padding: 6px 10px; }
-      .progress-wrap { width: 100%; min-width: unset; max-width: 320px; padding: 10px; }
-      
-      .combo-display { top: max(60px, env(safe-area-inset-top)); right: max(20px, env(safe-area-inset-right)); font-size: 28px; }
-      .hint { top: 20%; }
+    @media (max-width: 768px) {
       .card { padding: 20px; width: 92vw; max-height: 85vh; overflow-y: auto; }
       .title { font-size: 28px; }
       .hide-mobile { display: none !important; }
       .lobby-grid { gap: 10px; margin-bottom: 12px; }
       .lobby-input, .lobby-select { padding: 10px; font-size: 14px; }
       .action-btn { padding: 12px 8px; font-size: 14px; }
-      .credit { font-size: 11px; } 
+      .credit { font-size: 11px; top: max(10px, env(safe-area-inset-top)); left: max(15px, env(safe-area-inset-left)); }
     }
 
-    /* 모바일 가로모드(Landscape) */
     @media (max-height: 600px) and (orientation: landscape) {
-      .hud-bottom { 
-        bottom: max(15px, env(safe-area-inset-bottom)); 
-      }
-      .badge { font-size: 11px; padding: 4px 8px; }
-      .progress-wrap { min-width: 150px; padding: 8px 12px; }
-      
-      .combo-display { top: max(60px, env(safe-area-inset-top)); }
       .card { padding: 16px 24px; max-height: 90vh; overflow-y: auto; }
       .hide-mobile { display: none !important; }
       .lobby-grid { gap: 8px; margin-bottom: 8px; }
@@ -510,17 +526,18 @@
       <canvas id="game"></canvas>
 
       <div id="hud">
-        <!-- [개선] UI를 화면 하단 및 좌우 여백으로 분산 배치하여 게임 화면을 가리지 않음 -->
-        <div class="hud-bottom">
-          <div class="badge-row">
-            <div class="panel badge" id="attemptsLabel">Attempt 1</div>
-            <div class="panel badge" id="bestScoreLabel" style="color:var(--neon-cyan); border-color: var(--neon-cyan);">BEST: 0</div>
-            <div class="panel badge" id="scoreLabel" style="color:var(--neon-gold); font-size: 16px; border-color: var(--neon-gold);">SCORE: 0</div>
+        <div class="hud-left">
+          <div class="panel badge" id="attemptsLabel">Attempt 1</div>
+          <div class="panel badge" id="bestScoreLabel" style="color:var(--neon-cyan); border-color: var(--neon-cyan);">BEST: 0</div>
+          <div class="panel badge" id="scoreLabel" style="color:var(--neon-gold); font-size: 16px; border-color: var(--neon-gold);">SCORE: 0</div>
+        </div>
+
+        <div class="hud-right">
+          <div class="hud-right-row">
             <div class="panel badge" id="starLabel" style="color:var(--neon-gold)">⭐ 0</div>
             <div class="panel badge" id="speedLabel" style="color:var(--neon-green)">Speed: 1.0x</div>
             <div class="panel badge" id="jumpLabel" style="color:var(--neon-purple)">MAX JUMP: 2</div>
           </div>
-
           <div class="panel progress-wrap">
             <div class="progress-head">
               <span>LEVEL</span>
@@ -533,76 +550,78 @@
         </div>
 
         <div id="comboDisplay" class="combo-display hidden">COMBO x2</div>
+      </div>
 
-        <div class="panel fuel-wrap" id="fuelWrap">
-          <div class="fuel-head">
+      <div class="panel fuel-wrap" id="fuelWrap">
+        <div class="fuel-head">
             <span>FLIGHT FUEL</span>
             <span id="fuelText">100%</span>
           </div>
           <div class="fuel-bar">
             <div class="fuel-fill" id="fuelFill"></div>
           </div>
-        </div>
-
-        <div id="center-overlay">
-          
-          <div id="setupCard" class="card">
-            <h1 class="title">NEON PULSE</h1>
-            <p class="subtitle hide-mobile">자신만의 캐릭터를 커스텀하고 끝없이 달려보세요!</p>
-            
-            <div class="lobby-grid">
-                <div class="input-group span-2">
-                    <label>Nickname</label>
-                    <input type="text" id="nicknameInput" class="lobby-input" placeholder="PLAYER" maxlength="12" value="PLAYER" autocomplete="off" />
-                </div>
-                <div class="input-group">
-                    <label>Body Color</label>
-                    <select id="colorSelect" class="lobby-select"></select>
-                </div>
-                <div class="input-group">
-                    <label>Skin Shape</label>
-                    <select id="shapeSelect" class="lobby-select"></select>
-                </div>
-                <div class="input-group">
-                    <label>Face</label>
-                    <select id="faceSelect" class="lobby-select"></select>
-                </div>
-                <div class="preview-box">
-                    <canvas id="previewCanvas" width="60" height="60"></canvas>
-                </div>
-            </div>
-
-            <div class="action-row">
-              <button id="randomizeBtn" class="action-btn btn-random">Random Skin</button>
-              <button id="startGameBtn" class="action-btn btn-start">Start Game</button>
-            </div>
-
-            <div class="controls-note hide-mobile">
-              PC: <b>Space / Click / ↑</b> &nbsp;&nbsp;|&nbsp;&nbsp; Mobile: <b>화면 터치</b><br>
-              <span style="color:var(--neon-green)">★ 점프 선입력 지원: 닿기 직전 누르면 착지 즉시 점프!</span><br>
-              <span style="color:#aaa;">희귀 패턴: 별의 파도, 대시 돌파, 포탈 러시, 비행 터널</span>
-            </div>
-
-            <button id="muteBtn" class="sound-toggle">🔊 Sound: ON</button>
-          </div>
-
-          <div id="resultCard" class="card hidden">
-            <h2 class="title" id="resultTitle">SYSTEM FAILED</h2>
-            <p class="subtitle hide-mobile" id="resultText">Score: 0</p>
-            <div class="new-record hidden" id="newRecordText">🎉 NEW BEST RECORD! 🎉</div>
-            <div class="rank-text" id="resultRank">Rank: #??? (Top ?%)</div>
-            <div class="action-row" style="margin-top: 20px;">
-              <button id="retryBtn" class="action-btn btn-start">RETRY</button>
-              <button id="backMenuBtn" class="action-btn btn-random">MAIN MENU</button>
-            </div>
-          </div>
-
-        </div>
-
-        <div class="hint" id="hintText">Tap / Space to Jump · R to Retry</div>
-        
-        <div class="credit">Created by <span>[max / kdc916@naver.com]</span></div>
       </div>
+
+      <div id="center-overlay">
+        
+        <!-- Setup / Lobby Card -->
+        <div id="setupCard" class="card">
+          <h1 class="title">NEON PULSE</h1>
+          <p class="subtitle hide-mobile">자신만의 캐릭터를 커스텀하고 끝없이 달려보세요!</p>
+          
+          <div class="lobby-grid">
+              <div class="input-group span-2">
+                  <label>Nickname</label>
+                  <input type="text" id="nicknameInput" class="lobby-input" placeholder="PLAYER" maxlength="12" value="PLAYER" autocomplete="off" />
+              </div>
+              <div class="input-group">
+                  <label>Body Color</label>
+                  <select id="colorSelect" class="lobby-select"></select>
+              </div>
+              <div class="input-group">
+                  <label>Skin Shape</label>
+                  <select id="shapeSelect" class="lobby-select"></select>
+              </div>
+              <div class="input-group">
+                  <label>Face</label>
+                  <select id="faceSelect" class="lobby-select"></select>
+              </div>
+              <div class="preview-box">
+                  <canvas id="previewCanvas" width="60" height="60"></canvas>
+              </div>
+          </div>
+
+          <div class="action-row">
+            <button id="randomizeBtn" class="action-btn btn-random">Random Skin</button>
+            <button id="startGameBtn" class="action-btn btn-start">Start Game</button>
+          </div>
+
+          <div class="controls-note hide-mobile">
+            PC: <b>Space / Click / ↑</b> &nbsp;&nbsp;|&nbsp;&nbsp; Mobile: <b>화면 터치</b><br>
+            <span style="color:var(--neon-green)">★ 점프 선입력 지원: 닿기 직전 누르면 착지 즉시 점프!</span><br>
+            <span style="color:#aaa;">희귀 패턴: 별의 파도, 대시 돌파, 포탈 러시, 비행 터널</span>
+          </div>
+
+          <button id="muteBtn" class="sound-toggle">🔊 Sound: ON</button>
+        </div>
+
+        <!-- Result / Game Over Card -->
+        <div id="resultCard" class="card hidden">
+          <h2 class="title" id="resultTitle">SYSTEM FAILED</h2>
+          <p class="subtitle hide-mobile" id="resultText">Score: 0</p>
+          <div class="new-record hidden" id="newRecordText">🎉 NEW BEST RECORD! 🎉</div>
+          <div class="rank-text" id="resultRank">Rank: #??? (Top ?%)</div>
+          <div class="action-row" style="margin-top: 20px;">
+            <button id="retryBtn" class="action-btn btn-start">RETRY</button>
+            <button id="backMenuBtn" class="action-btn btn-random">MAIN MENU</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="hint hidden" id="hintText">Tap / Space to Jump · R to Retry</div>
+      
+      <div class="credit">Created by <span>[max / kdc916@naver.com]</span></div>
     </div>
   </div>
 
@@ -659,7 +678,8 @@
         
         fuelWrap: document.getElementById('fuelWrap'),
         fuelFill: document.getElementById('fuelFill'),
-        fuelText: document.getElementById('fuelText')
+        fuelText: document.getElementById('fuelText'),
+        hint: document.getElementById('hintText')
       };
 
       let savedBest = 0;
@@ -872,9 +892,13 @@
 
       function showSetup() {
         game.state = 'setup';
-        UI.resultCard.classList.add('hidden');
-        UI.setupCard.classList.remove('hidden');
+        if (UI.resultCard) UI.resultCard.classList.add('hidden');
+        if (UI.setupCard) UI.setupCard.classList.remove('hidden');
         if (UI.comboDisplay) UI.comboDisplay.classList.add('hidden'); 
+        if (UI.hint) {
+            UI.hint.classList.remove('hidden');
+            UI.hint.textContent = "Tap / Space to Jump";
+        }
       }
 
       function startGame() {
@@ -883,8 +907,8 @@
         playerDesign.shape = UI.shapeSel.value;
         playerDesign.face = UI.faceSel.value;
 
-        UI.setupCard.classList.add('hidden');
-        UI.resultCard.classList.add('hidden');
+        if (UI.setupCard) UI.setupCard.classList.add('hidden');
+        if (UI.resultCard) UI.resultCard.classList.add('hidden');
         resetRun(false);
         game.state = 'playing';
       }
@@ -893,12 +917,9 @@
       // 4. DYNAMIC LEVEL GENERATION
       // ==========================================
       const spike = (x, flip=false, w=40, h=40) => ({ type: flip ? 'spike_down' : 'spike', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#f0f', fatalHit: false });
-      const ceilSpike = (x, w=40, h=40) => ({ type: 'spike_down', x, y: 50, w, h, color: '#f0f', fatalHit: false }); 
       const block = (x, flip=false, w=50, h=60) => ({ type: 'block', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#0ff', fatalHit: false });
-      const ceilBlock = (x, w=50, h=60) => ({ type: 'block', x, y: 50, w, h, color: '#0ff', fatalHit: false }); 
       const superBlock = (x, flip=false, h=160) => ({ type: 'block', x, y: flip ? 50 : CONFIG.groundY - h, w: 50, h, color: '#b026ff', fatalHit: false });
       const plat = (x, y, w=180) => ({ type: 'platform', x, y, w, h: 20, color: '#39ff14', fatalHit: false });
-      const orb = (x, y) => ({ type: 'orb', x, y, r: 24, w: 48, h: 48, used: false, color: '#ffea00' });
       const flightItem = (x, y) => ({ type: 'item_flight', x, y, r: 30, w: 60, h: 60, used: false, color: '#ffea00' });
       const rhombus = (x, flip=false, size=60) => ({ type: 'rhombus', x, y: flip ? 50 : CONFIG.groundY - size, w: size, h: size, color: '#ff0055', fatalHit: false });
       const trap = (x, flip=false, w=80, h=80) => ({ type: 'trapezoid', narrow: flip ? 'bottom' : 'top', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#ff9d00', fatalHit: false });
@@ -909,7 +930,6 @@
 
       function generateNextChunk(cx, isFlipped, index, currentLevel = 1) {
         const list = [];
-        
         const gapMulti = Math.max(0.7, 1 - ((currentLevel - 1) * 0.035));
         const baseGap = 850 * gapMulti;
         const doubleJumpGap = 1050 * gapMulti;
@@ -921,7 +941,6 @@
 
         if (index > 1 && Math.random() < 0.15) {
             const rareType = Math.random();
-            
             if (rareType < 0.25) {
                 for(let i=0; i<12; i++) {
                     const yOffset = Math.sin(i * 0.6) * 120;
@@ -1006,16 +1025,13 @@
             while(attempts < 5 && !placed) {
                 const subX = cx + 150 + Math.random() * (nextX - cx - 300);
                 const testW = 40;
-                
                 let isOverlapping = false;
                 for (const ob of list) {
                     const obW = ob.w || (ob.r ? ob.r * 2 : 40);
                     if (subX < ob.x + obW + 60 && subX + testW + 60 > ob.x) {
-                        isOverlapping = true;
-                        break;
+                        isOverlapping = true; break;
                     }
                 }
-                
                 if (!isOverlapping) {
                     if (Math.random() < 0.5) list.push(spike(subX, sF));
                     else list.push(block(subX, sF, 40, 40));
@@ -1092,6 +1108,7 @@
         if (UI.fuelWrap) UI.fuelWrap.classList.remove('active');
         if (UI.newRecord) UI.newRecord.classList.add('hidden');
         if (UI.comboDisplay) UI.comboDisplay.classList.add('hidden');
+        if (UI.hint) UI.hint.classList.add('hidden'); // [수정] 재시작 시 게임 힌트 숨김 처리
         
         updateProgress();
       }
@@ -1101,6 +1118,10 @@
         game.timer = CONFIG.deathDelay;
         game.flash = 1;
         if (UI.comboDisplay) UI.comboDisplay.classList.add('hidden');
+        if (UI.hint) {
+            UI.hint.classList.remove('hidden');
+            UI.hint.textContent = "R to Retry"; 
+        }
         
         const coreColor = CUSTOM_COLORS[playerDesign.colorName];
 
@@ -1286,22 +1307,21 @@
 
       function getHitbox(ob, sx) {
         let hit = { x: sx, y: ob.y, w: ob.w, h: ob.h };
-        if (ob.type === 'spike') {
-            hit.x += ob.w * 0.25; hit.w *= 0.5;
-            hit.y += ob.h * 0.4;  hit.h *= 0.6;
-        } else if (ob.type === 'spike_down') {
-            hit.x += ob.w * 0.25; hit.w *= 0.5;
-            hit.y += 0; hit.h *= 0.6; 
-        } else if (ob.type === 'rhombus') {
-            hit.x += ob.w * 0.2; hit.w *= 0.6; hit.y += ob.h * 0.2; hit.h *= 0.6;
-        } else if (ob.type === 'trapezoid') {
-            hit.x += 8; hit.w -= 16; hit.y += 8; hit.h -= 16;
-        } else if (ob.type === 'platform') {
-            hit.x += 6; hit.w -= 12; hit.y += 6; hit.h -= 12;
-        } else if (ob.type === 'star') {
-            hit.x -= 10; hit.w += 20; hit.y -= 10; hit.h += 20;
-        } else {
-            hit.x += 4; hit.w -= 8; hit.y += 4; hit.h -= 8;
+        switch(ob.type) {
+            case 'spike':
+                hit.x += ob.w * 0.25; hit.w *= 0.5; hit.y += ob.h * 0.4;  hit.h *= 0.6; break;
+            case 'spike_down':
+                hit.x += ob.w * 0.25; hit.w *= 0.5; hit.y += 0; hit.h *= 0.6; break;
+            case 'rhombus':
+                hit.x += ob.w * 0.2; hit.w *= 0.6; hit.y += ob.h * 0.2; hit.h *= 0.6; break;
+            case 'trapezoid':
+                hit.x += 8; hit.w -= 16; hit.y += 8; hit.h -= 16; break;
+            case 'platform':
+                hit.x += 6; hit.w -= 12; hit.y += 6; hit.h -= 12; break;
+            case 'star':
+                hit.x -= 10; hit.w += 20; hit.y -= 10; hit.h += 20; break;
+            default:
+                hit.x += 4; hit.w -= 8; hit.y += 4; hit.h -= 8; break;
         }
         return hit;
       }
@@ -1756,130 +1776,144 @@
           ctx.shadowBlur = 15 * world.pulse;
           ctx.shadowColor = ob.color;
 
-          if (ob.type === 'spike') {
-            ctx.fillStyle = '#111'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(x + ob.w/2, ob.y);
-            ctx.lineTo(x + ob.w, ob.y + ob.h); ctx.lineTo(x, ob.y + ob.h);
-            ctx.closePath(); ctx.fill(); ctx.stroke();
-          } else if (ob.type === 'spike_down') { 
-            ctx.fillStyle = '#111'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(x + ob.w/2, ob.y + ob.h);
-            ctx.lineTo(x + ob.w, ob.y); ctx.lineTo(x, ob.y);
-            ctx.closePath(); ctx.fill(); ctx.stroke();
-          } else if (ob.type === 'block') {
-            ctx.fillStyle = '#0f1423'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
-            ctx.strokeRect(x, ob.y, ob.w, ob.h); ctx.fillRect(x, ob.y, ob.w, ob.h);
-            ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
-            ctx.strokeRect(x+5, ob.y+5, ob.w-10, ob.h-10);
-          } else if (ob.type === 'platform') {
-            ctx.fillStyle = 'rgba(57, 255, 20, 0.1)'; 
-            ctx.fillRect(x, ob.y, ob.w, ob.h);
-            ctx.strokeStyle = ob.color; ctx.lineWidth = 2;
-            ctx.strokeRect(x, ob.y, ob.w, ob.h);
-            ctx.shadowBlur = 15 * world.pulse;
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(x, ob.y, ob.w, 4); // 상단 라인
-            ctx.fillRect(x, ob.y + ob.h - 4, ob.w, 4); // 하단 라인
-          } else if (ob.type === 'rhombus') {
-            ctx.fillStyle = '#111'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(x + ob.w/2, ob.y); ctx.lineTo(x + ob.w, ob.y + ob.h/2);
-            ctx.lineTo(x + ob.w/2, ob.y + ob.h); ctx.lineTo(x, ob.y + ob.h/2);
-            ctx.closePath(); ctx.fill(); ctx.stroke();
-            ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(x + ob.w/2, ob.y + 6); ctx.lineTo(x + ob.w - 6, ob.y + ob.h/2);
-            ctx.lineTo(x + ob.w/2, ob.y + ob.h - 6); ctx.lineTo(x + 6, ob.y + ob.h/2);
-            ctx.closePath(); ctx.stroke();
-          } else if (ob.type === 'trapezoid') {
-            ctx.fillStyle = '#111'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
-            ctx.beginPath();
-            if (ob.narrow === 'top') {
-              ctx.moveTo(x + ob.w*0.25, ob.y); ctx.lineTo(x + ob.w*0.75, ob.y);
-              ctx.lineTo(x + ob.w, ob.y + ob.h); ctx.lineTo(x, ob.y + ob.h);
-            } else {
-              ctx.moveTo(x, ob.y); ctx.lineTo(x + ob.w, ob.y);
-              ctx.lineTo(x + ob.w*0.75, ob.y + ob.h); ctx.lineTo(x + ob.w*0.25, ob.y + ob.h);
-            }
-            ctx.closePath(); ctx.fill(); ctx.stroke();
-            ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
-            ctx.beginPath();
-            if (ob.narrow === 'top') {
-              ctx.moveTo(x + ob.w*0.25 + 4, ob.y + 4); ctx.lineTo(x + ob.w*0.75 - 4, ob.y + 4);
-              ctx.lineTo(x + ob.w - 6, ob.y + ob.h - 4); ctx.lineTo(x + 6, ob.y + ob.h - 4);
-            } else {
-              ctx.moveTo(x + 4, ob.y + 4); ctx.lineTo(x + ob.w - 4, ob.y + 4);
-              ctx.lineTo(x + ob.w*0.75 - 4, ob.y + ob.h - 4); ctx.lineTo(x + ob.w*0.25 + 4, ob.y + ob.h - 4);
-            }
-            ctx.closePath(); ctx.stroke();
-          } else if (ob.type === 'orb') {
-            if (ob.used) continue;
-            const p = world.pulse;
-            ctx.translate(x, ob.y); ctx.scale(p, p);
-            ctx.fillStyle = '#000'; ctx.strokeStyle = ob.color; ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.arc(0, 0, ob.r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = ob.color;
-            ctx.beginPath(); ctx.arc(0, 0, ob.r * 0.4, 0, Math.PI*2); ctx.fill();
-            ctx.scale(1/p, 1/p); ctx.translate(-x, -ob.y);
-          } else if (ob.type === 'orb_dash') {
-            if (ob.used) continue;
-            const p = world.pulse; const hoverY = ob.y + Math.sin(Date.now() / 150) * 5;
-            ctx.translate(x, hoverY); ctx.scale(p, p);
-            ctx.shadowBlur = 20 * p; ctx.shadowColor = ob.color; ctx.fillStyle = 'rgba(255, 0, 85, 0.2)';
-            ctx.beginPath(); ctx.arc(0, 0, ob.r * 1.5, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#000'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(0, -ob.r); ctx.lineTo(ob.r, 0); ctx.lineTo(0, ob.r); ctx.lineTo(-ob.r, 0);
-            ctx.closePath(); ctx.fill(); ctx.stroke();
-            ctx.shadowBlur = 0; ctx.fillStyle = '#fff';
-            ctx.font = '800 16px Outfit'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('>>', 2, 1);
-            ctx.scale(1/p, 1/p); ctx.translate(-x, -hoverY);
-          } else if (ob.type === 'item_flight') {
-            if (ob.used) continue;
-            const hoverY = ob.y + Math.sin(Date.now() / 200) * 8;
-            ctx.translate(x + ob.w/2, hoverY + ob.h/2); ctx.fillStyle = 'rgba(255, 234, 0, 0.2)';
-            ctx.beginPath(); ctx.arc(0, 0, ob.r, 0, Math.PI*2); ctx.fill();
-            ctx.shadowColor = ob.color; ctx.shadowBlur = 20 * world.pulse; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(20, 0); ctx.lineTo(0, 20); ctx.lineTo(-20, 0); ctx.closePath(); ctx.stroke();
-            ctx.shadowBlur = 0; ctx.fillStyle = '#fff';
-            ctx.font = '700 14px Outfit'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('FLY', 0, 0);
-            ctx.translate(-(x + ob.w/2), -(hoverY + ob.h/2));
-          } else if (ob.type === 'star') {
-            if (ob.collected) continue;
-            const sRot = Date.now() / 300;
-            ctx.translate(x + ob.w/2, ob.y + ob.h/2); ctx.rotate(sRot);
-            ctx.shadowColor = '#ffea00'; ctx.shadowBlur = 15 * world.pulse;
-            drawStarShape(ctx, 0, 0, 5, ob.w/2, ob.w/4, '#ffea00');
-            ctx.rotate(-sRot); ctx.translate(-(x + ob.w/2), -(ob.y + ob.h/2));
-          } else if (ob.type === 'portal_grav') {
-            if (ob.used) continue;
-            const pColor = ob.dir === 'up' ? '#00ffff' : '#ff9d00';
-            const hoverY = ob.y + Math.sin(Date.now() / 250) * 10;
-            ctx.shadowColor = pColor; ctx.shadowBlur = 20 * world.pulse;
-            
-            const grad = ctx.createLinearGradient(0, hoverY, 0, hoverY + ob.h);
-            grad.addColorStop(0, 'transparent'); grad.addColorStop(0.5, pColor); grad.addColorStop(1, 'transparent');
-            ctx.fillStyle = grad; ctx.globalAlpha = 0.3; ctx.fillRect(x + ob.w/4, hoverY, ob.w/2, ob.h); ctx.globalAlpha = 1;
+          // [리팩토링] 장애물 렌더링 로직 Switch문 변경 (최적화)
+          switch (ob.type) {
+            case 'spike':
+                ctx.fillStyle = '#111'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(x + ob.w/2, ob.y);
+                ctx.lineTo(x + ob.w, ob.y + ob.h); ctx.lineTo(x, ob.y + ob.h);
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+                break;
+            case 'spike_down':
+                ctx.fillStyle = '#111'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(x + ob.w/2, ob.y + ob.h);
+                ctx.lineTo(x + ob.w, ob.y); ctx.lineTo(x, ob.y);
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+                break;
+            case 'block':
+                ctx.fillStyle = '#0f1423'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
+                ctx.strokeRect(x, ob.y, ob.w, ob.h); ctx.fillRect(x, ob.y, ob.w, ob.h);
+                ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+                ctx.strokeRect(x+5, ob.y+5, ob.w-10, ob.h-10);
+                break;
+            case 'platform':
+                ctx.fillStyle = 'rgba(57, 255, 20, 0.1)'; 
+                ctx.fillRect(x, ob.y, ob.w, ob.h);
+                ctx.strokeStyle = ob.color; ctx.lineWidth = 2;
+                ctx.strokeRect(x, ob.y, ob.w, ob.h);
+                ctx.shadowBlur = 15 * world.pulse;
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(x, ob.y, ob.w, 4); 
+                ctx.fillRect(x, ob.y + ob.h - 4, ob.w, 4); 
+                break;
+            case 'rhombus':
+                ctx.fillStyle = '#111'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(x + ob.w/2, ob.y); ctx.lineTo(x + ob.w, ob.y + ob.h/2);
+                ctx.lineTo(x + ob.w/2, ob.y + ob.h); ctx.lineTo(x, ob.y + ob.h/2);
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(x + ob.w/2, ob.y + 6); ctx.lineTo(x + ob.w - 6, ob.y + ob.h/2);
+                ctx.lineTo(x + ob.w/2, ob.y + ob.h - 6); ctx.lineTo(x + 6, ob.y + ob.h/2);
+                ctx.closePath(); ctx.stroke();
+                break;
+            case 'trapezoid':
+                ctx.fillStyle = '#111'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
+                ctx.beginPath();
+                if (ob.narrow === 'top') {
+                  ctx.moveTo(x + ob.w*0.25, ob.y); ctx.lineTo(x + ob.w*0.75, ob.y);
+                  ctx.lineTo(x + ob.w, ob.y + ob.h); ctx.lineTo(x, ob.y + ob.h);
+                } else {
+                  ctx.moveTo(x, ob.y); ctx.lineTo(x + ob.w, ob.y);
+                  ctx.lineTo(x + ob.w*0.75, ob.y + ob.h); ctx.lineTo(x + ob.w*0.25, ob.y + ob.h);
+                }
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+                ctx.beginPath();
+                if (ob.narrow === 'top') {
+                  ctx.moveTo(x + ob.w*0.25 + 4, ob.y + 4); ctx.lineTo(x + ob.w*0.75 - 4, ob.y + 4);
+                  ctx.lineTo(x + ob.w - 6, ob.y + ob.h - 4); ctx.lineTo(x + 6, ob.y + ob.h - 4);
+                } else {
+                  ctx.moveTo(x + 4, ob.y + 4); ctx.lineTo(x + ob.w - 4, ob.y + 4);
+                  ctx.lineTo(x + ob.w*0.75 - 4, ob.y + ob.h - 4); ctx.lineTo(x + ob.w*0.25 + 4, ob.y + ob.h - 4);
+                }
+                ctx.closePath(); ctx.stroke();
+                break;
+            case 'orb':
+                if (ob.used) break;
+                const p1 = world.pulse;
+                ctx.translate(x, ob.y); ctx.scale(p1, p1);
+                ctx.fillStyle = '#000'; ctx.strokeStyle = ob.color; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.arc(0, 0, ob.r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = ob.color;
+                ctx.beginPath(); ctx.arc(0, 0, ob.r * 0.4, 0, Math.PI*2); ctx.fill();
+                ctx.scale(1/p1, 1/p1); ctx.translate(-x, -ob.y);
+                break;
+            case 'orb_dash':
+                if (ob.used) break;
+                const p2 = world.pulse; const hoverY = ob.y + Math.sin(Date.now() / 150) * 5;
+                ctx.translate(x, hoverY); ctx.scale(p2, p2);
+                ctx.shadowBlur = 20 * p2; ctx.shadowColor = ob.color; ctx.fillStyle = 'rgba(255, 0, 85, 0.2)';
+                ctx.beginPath(); ctx.arc(0, 0, ob.r * 1.5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#000'; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(0, -ob.r); ctx.lineTo(ob.r, 0); ctx.lineTo(0, ob.r); ctx.lineTo(-ob.r, 0);
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.shadowBlur = 0; ctx.fillStyle = '#fff';
+                ctx.font = '800 16px Outfit'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('>>', 2, 1);
+                ctx.scale(1/p2, 1/p2); ctx.translate(-x, -hoverY);
+                break;
+            case 'item_flight':
+                if (ob.used) break;
+                const hoverY2 = ob.y + Math.sin(Date.now() / 200) * 8;
+                ctx.translate(x + ob.w/2, hoverY2 + ob.h/2); ctx.fillStyle = 'rgba(255, 234, 0, 0.2)';
+                ctx.beginPath(); ctx.arc(0, 0, ob.r, 0, Math.PI*2); ctx.fill();
+                ctx.shadowColor = ob.color; ctx.shadowBlur = 20 * world.pulse; ctx.strokeStyle = ob.color; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(20, 0); ctx.lineTo(0, 20); ctx.lineTo(-20, 0); ctx.closePath(); ctx.stroke();
+                ctx.shadowBlur = 0; ctx.fillStyle = '#fff';
+                ctx.font = '700 14px Outfit'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('FLY', 0, 0);
+                ctx.translate(-(x + ob.w/2), -(hoverY2 + ob.h/2));
+                break;
+            case 'star':
+                if (ob.collected) break;
+                const sRot = Date.now() / 300;
+                ctx.translate(x + ob.w/2, ob.y + ob.h/2); ctx.rotate(sRot);
+                ctx.shadowColor = '#ffea00'; ctx.shadowBlur = 15 * world.pulse;
+                drawStarShape(ctx, 0, 0, 5, ob.w/2, ob.w/4, '#ffea00');
+                ctx.rotate(-sRot); ctx.translate(-(x + ob.w/2), -(ob.y + ob.h/2));
+                break;
+            case 'portal_grav':
+                if (ob.used) break;
+                const pColor = ob.dir === 'up' ? '#00ffff' : '#ff9d00';
+                const hoverY3 = ob.y + Math.sin(Date.now() / 250) * 10;
+                ctx.shadowColor = pColor; ctx.shadowBlur = 20 * world.pulse;
+                
+                const grad = ctx.createLinearGradient(0, hoverY3, 0, hoverY3 + ob.h);
+                grad.addColorStop(0, 'transparent'); grad.addColorStop(0.5, pColor); grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad; ctx.globalAlpha = 0.3; ctx.fillRect(x + ob.w/4, hoverY3, ob.w/2, ob.h); ctx.globalAlpha = 1;
 
-            ctx.strokeStyle = pColor; ctx.lineWidth = 4; const time = Date.now() / 300;
-            ctx.save(); ctx.translate(x + ob.w/2, hoverY + ob.h/2); ctx.rotate(time);
-            ctx.beginPath(); ctx.ellipse(0, 0, ob.w/3, ob.h/3, 0, 0, Math.PI*2); ctx.stroke();
-            ctx.rotate(-time * 2);
-            ctx.beginPath(); ctx.ellipse(0, 0, ob.w/4, ob.h/2.5, 0, 0, Math.PI*2); ctx.stroke();
-            ctx.restore();
+                ctx.strokeStyle = pColor; ctx.lineWidth = 4; const time3 = Date.now() / 300;
+                ctx.save(); ctx.translate(x + ob.w/2, hoverY3 + ob.h/2); ctx.rotate(time3);
+                ctx.beginPath(); ctx.ellipse(0, 0, ob.w/3, ob.h/3, 0, 0, Math.PI*2); ctx.stroke();
+                ctx.rotate(-time3 * 2);
+                ctx.beginPath(); ctx.ellipse(0, 0, ob.w/4, ob.h/2.5, 0, 0, Math.PI*2); ctx.stroke();
+                ctx.restore();
 
-            ctx.fillStyle = '#fff'; ctx.shadowBlur = 0; ctx.beginPath();
-            if (ob.dir === 'up') { ctx.moveTo(x + ob.w/2, hoverY + ob.h/2 - 15); ctx.lineTo(x + ob.w/2 - 10, hoverY + ob.h/2 + 5); ctx.lineTo(x + ob.w/2 + 10, hoverY + ob.h/2 + 5); } 
-            else { ctx.moveTo(x + ob.w/2, hoverY + ob.h/2 + 15); ctx.lineTo(x + ob.w/2 - 10, hoverY + ob.h/2 - 5); ctx.lineTo(x + ob.w/2 + 10, hoverY + ob.h/2 - 5); }
-            ctx.fill();
-          } else if (ob.type === 'glass') {
-            if (ob.destroyed) continue;
-            const time = (Date.now() / 1500) % 1; const scanlineY = time * ob.h;
-            ctx.fillStyle = 'rgba(255, 0, 85, 0.1)'; ctx.fillRect(x, ob.y, ob.w, ob.h);
-            ctx.fillStyle = 'rgba(255, 0, 85, 0.5)'; ctx.fillRect(x, ob.y + scanlineY, ob.w, 10);
-            ctx.strokeStyle = ob.color; ctx.lineWidth = 3; ctx.shadowBlur = 15; ctx.shadowColor = ob.color;
-            ctx.strokeRect(x, ob.y, ob.w, ob.h);
-            ctx.shadowBlur = 0; ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255, 0, 85, 0.4)';
-            ctx.beginPath();
-            for (let i = 0; i < ob.h; i += 30) { ctx.moveTo(x, ob.y + i); ctx.lineTo(x + ob.w, ob.y + i + 30); ctx.moveTo(x + ob.w, ob.y + i); ctx.lineTo(x, ob.y + i + 30); }
-            ctx.stroke();
+                ctx.fillStyle = '#fff'; ctx.shadowBlur = 0; ctx.beginPath();
+                if (ob.dir === 'up') { ctx.moveTo(x + ob.w/2, hoverY3 + ob.h/2 - 15); ctx.lineTo(x + ob.w/2 - 10, hoverY3 + ob.h/2 + 5); ctx.lineTo(x + ob.w/2 + 10, hoverY3 + ob.h/2 + 5); } 
+                else { ctx.moveTo(x + ob.w/2, hoverY3 + ob.h/2 + 15); ctx.lineTo(x + ob.w/2 - 10, hoverY3 + ob.h/2 - 5); ctx.lineTo(x + ob.w/2 + 10, hoverY3 + ob.h/2 - 5); }
+                ctx.fill();
+                break;
+            case 'glass':
+                if (ob.destroyed) break;
+                const time4 = (Date.now() / 1500) % 1; const scanlineY = time4 * ob.h;
+                ctx.fillStyle = 'rgba(255, 0, 85, 0.1)'; ctx.fillRect(x, ob.y, ob.w, ob.h);
+                ctx.fillStyle = 'rgba(255, 0, 85, 0.5)'; ctx.fillRect(x, ob.y + scanlineY, ob.w, 10);
+                ctx.strokeStyle = ob.color; ctx.lineWidth = 3; ctx.shadowBlur = 15; ctx.shadowColor = ob.color;
+                ctx.strokeRect(x, ob.y, ob.w, ob.h);
+                ctx.shadowBlur = 0; ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255, 0, 85, 0.4)';
+                ctx.beginPath();
+                for (let i = 0; i < ob.h; i += 30) { ctx.moveTo(x, ob.y + i); ctx.lineTo(x + ob.w, ob.y + i + 30); ctx.moveTo(x + ob.w, ob.y + i); ctx.lineTo(x, ob.y + i + 30); }
+                ctx.stroke();
+                break;
           }
           
           ctx.shadowBlur = 0;
