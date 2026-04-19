@@ -89,3 +89,13 @@ AudioSystem: Web Audio API 기반 효과음 생성기.
 index.html 파일을 Chrome, Safari, Edge 등 최신 웹 브라우저에 드래그 앤 드롭하여 엽니다.
 
 닉네임과 스킨을 설정하고 Start Game 버튼을 누르세요!
+
+⚠️ 저작권 및 이용 안내 (Copyright & License)
+
+본 게임(Neon Pulse)의 소스 코드, 에셋, 디자인 및 기획에 대한 모든 저작권은 원작자에게 있습니다.
+
+무단 복제, 배포, 코드 수정(2차 창작) 및 상업적 이용(판매, 광고 포함)을 엄격히 금지합니다.
+
+본 코드는 오직 개인적인 학습 및 플레이 목적으로만 제공되며, 이를 위반하여 발생한 문제에 대해서는 법적 조치를 취할 수 있습니다.
+
+Copyright © 2026 [max / kdc916@naver.com]. All rights reserved.
