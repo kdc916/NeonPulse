@@ -26,6 +26,7 @@
       margin: 0;
       width: 100%;
       height: 100%;
+      height: 100dvh;
       overflow: hidden;
       background-color: var(--bg-dark);
       color: var(--text);
@@ -48,6 +49,7 @@
       position: relative;
       width: 100vw;
       height: 100vh;
+      height: 100dvh;
       display: grid;
       place-items: center;
       overflow: hidden;
@@ -76,7 +78,7 @@
     }
 
     /* -------------------------------------------
-       [완전 개편] 인게임 HUD 레이아웃 
+       [개편] 반응형 인게임 HUD 개별 절대 배치
     ------------------------------------------- */
     #hud {
       position: fixed;
@@ -85,68 +87,59 @@
       z-index: 100;
     }
 
-    .hud-group {
+    .hud-item {
       position: absolute;
-      display: flex;
-      gap: 10px;
+      transition: all 0.3s ease;
     }
 
-    .hud-row {
-      display: flex;
-      gap: 8px;
+    /* 가로 모드 (Landscape & Desktop) 기본 레이아웃 */
+    #levelWrap {
+      top: max(15px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    #speedLabel {
+      top: max(15px, env(safe-area-inset-top));
+      left: max(15px, env(safe-area-inset-left));
+    }
+    #scoreLabel {
+      top: max(15px, env(safe-area-inset-top));
+      right: max(15px, env(safe-area-inset-right));
+    }
+    #attemptsLabel {
+      bottom: max(15px, env(safe-area-inset-bottom));
+      left: max(15px, env(safe-area-inset-left));
+    }
+    #jumpLabel {
+      bottom: max(15px, env(safe-area-inset-bottom));
+      right: max(15px, env(safe-area-inset-right));
     }
 
-    /* PC & 가로 모드(Landscape) 기본 설정: 좌/우 여백(블랙바)에 수직으로 배치 */
-    .hud-stats {
-      top: max(20px, env(safe-area-inset-top));
-      left: max(20px, env(safe-area-inset-left));
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .hud-status {
-      top: max(20px, env(safe-area-inset-top));
-      right: max(20px, env(safe-area-inset-right));
-      flex-direction: column;
-      align-items: flex-end;
-    }
-
-    /* 세로 모드(Portrait) 설정: 위/아래 여백(블랙바)에 배치 */
+    /* 세로 모드 (Portrait) 레이아웃 */
     @media (orientation: portrait) {
-      .hud-stats {
-        top: max(20px, env(safe-area-inset-top));
-        left: 0;
-        right: 0;
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
-        padding: 0 10px;
+      #levelWrap {
+        top: max(40px, env(safe-area-inset-top));
       }
-      .hud-status {
+      #scoreLabel {
         top: auto;
-        bottom: max(30px, env(safe-area-inset-bottom));
-        left: 0;
-        right: 0;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        padding: 0 10px;
+        bottom: max(15px, env(safe-area-inset-bottom));
+        left: max(15px, env(safe-area-inset-left));
+        right: auto;
       }
-      .hud-row {
-        justify-content: center;
+      #speedLabel {
+        top: auto;
+        bottom: max(15px, env(safe-area-inset-bottom));
+        right: max(15px, env(safe-area-inset-right));
+        left: auto;
       }
-      .combo-display {
-        top: 20% !important; /* 상단 UI를 피해 살짝 아래로 */
+      #attemptsLabel {
+        bottom: max(55px, env(safe-area-inset-bottom));
+        left: max(15px, env(safe-area-inset-left));
       }
-      .fuel-wrap {
-        top: 25% !important; /* 상단 UI를 피해 아래로 */
+      #jumpLabel {
+        bottom: max(55px, env(safe-area-inset-bottom));
+        right: max(15px, env(safe-area-inset-right));
       }
-      .progress-wrap {
-        width: 100%;
-        max-width: 320px;
-      }
-      .badge { font-size: 12px; padding: 6px 10px; }
     }
 
     /* 패널 및 공통 UI 스타일 */
@@ -169,7 +162,7 @@
       text-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
-      flex-shrink: 0; /* 깜빡임 및 레이아웃 뭉개짐 방지 */
+      flex-shrink: 0;
     }
 
     .progress-wrap {
@@ -209,7 +202,7 @@
     /* 콤보 UI - 최상단 중앙 고정 */
     .combo-display {
       position: absolute;
-      top: max(40px, env(safe-area-inset-top));
+      top: max(85px, env(safe-area-inset-top));
       left: 50%;
       font-size: 42px;
       font-weight: 800;
@@ -233,7 +226,7 @@
     /* 비행 연료 바 */
     .fuel-wrap {
       position: absolute;
-      top: max(100px, env(safe-area-inset-top));
+      top: max(140px, env(safe-area-inset-top));
       left: 50%;
       transform: translateX(-50%);
       min-width: 300px;
@@ -242,7 +235,6 @@
       transition: opacity 0.3s ease;
       z-index: 15;
     }
-
     .fuel-wrap.active { opacity: 1; }
 
     .fuel-head {
@@ -256,7 +248,6 @@
       letter-spacing: 1px;
       text-shadow: 0 0 5px rgba(255, 234, 0, 0.5);
     }
-
     .fuel-bar {
       width: 100%;
       height: 12px;
@@ -265,7 +256,6 @@
       border: 1px solid rgba(255, 234, 0, 0.3);
       overflow: hidden;
     }
-
     .fuel-fill {
       width: 100%;
       height: 100%;
@@ -302,7 +292,6 @@
     }
 
     .title {
-      margin: 0 0 5px;
       font-size: clamp(28px, 6vw, 42px);
       font-weight: 800;
       line-height: 1.1;
@@ -312,6 +301,7 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       filter: drop-shadow(0 0 8px rgba(255, 0, 255, 0.4));
+      margin: 0;
     }
 
     .subtitle {
@@ -432,7 +422,6 @@
       line-height: 1.5;
       text-align: left;
     }
-
     .controls-note b { color: var(--neon-cyan); }
 
     .sound-toggle {
@@ -457,15 +446,6 @@
       margin-top: 10px;
     }
 
-    .new-record {
-      font-size: 16px;
-      font-weight: 800;
-      color: var(--neon-green);
-      text-shadow: 0 0 10px var(--neon-green);
-      margin-top: 5px;
-      animation: blink 0.5s infinite alternate;
-    }
-
     .hint {
       position: absolute;
       top: 25%;
@@ -483,32 +463,7 @@
       backdrop-filter: blur(4px);
       animation: pulse 2s infinite;
     }
-
-    .hint.hidden {
-      display: none !important;
-    }
-
-    .credit {
-      position: absolute;
-      bottom: max(15px, env(safe-area-inset-bottom));
-      right: max(20px, env(safe-area-inset-right));
-      font-size: 13px;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.3);
-      letter-spacing: 0.5px;
-      pointer-events: auto;
-      z-index: 100;
-      transition: color 0.3s ease;
-    }
-    
-    .credit:hover {
-      color: var(--neon-cyan);
-      text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
-    }
-
-    .credit span {
-      color: rgba(255, 255, 255, 0.5);
-    }
+    .hint.hidden { display: none !important; }
 
     @keyframes pulse {
       0% { opacity: 0.6; }
@@ -516,21 +471,13 @@
       100% { opacity: 0.6; }
     }
 
-    @keyframes blink {
-      0% { opacity: 1; }
-      100% { opacity: 0.3; }
-    }
-
     /* 작은 팝업 환경 모바일 대응 */
     @media (max-width: 768px) {
       .card { padding: 20px; width: 92vw; max-height: 85vh; overflow-y: auto; }
-      .title { font-size: 28px; }
       .hide-mobile { display: none !important; }
       .lobby-grid { gap: 10px; margin-bottom: 12px; }
       .lobby-input, .lobby-select { padding: 10px; font-size: 14px; }
       .action-btn { padding: 12px 8px; font-size: 14px; }
-      /* 크레딧 위치 조정 */
-      .credit { top: max(10px, env(safe-area-inset-top)); right: max(15px, env(safe-area-inset-right)); bottom: auto; font-size: 11px; }
     }
 
     @media (max-height: 600px) and (orientation: landscape) {
@@ -548,34 +495,28 @@
       <canvas id="game"></canvas>
 
       <div id="hud">
-        <!-- [수정] 가로 모드는 좌/우 빈 공간에 수직 배치, 세로 모드는 상/하 빈 공간에 배치 -->
-        <div class="hud-group hud-stats">
-          <div class="panel badge" id="attemptsLabel">Attempt 1</div>
-          <div class="panel badge" id="bestScoreLabel" style="color:var(--neon-cyan); border-color: var(--neon-cyan);">BEST: 0</div>
-          <div class="panel badge" id="scoreLabel" style="color:var(--neon-gold); font-size: 16px; border-color: var(--neon-gold);">SCORE: 0</div>
-          <div class="panel badge" id="starLabel" style="color:var(--neon-gold)">⭐ 0</div>
-        </div>
-
-        <div class="hud-group hud-status">
-          <div class="hud-row">
-            <div class="panel badge" id="speedLabel" style="color:var(--neon-green)">Speed: 1.0x</div>
-            <div class="panel badge" id="jumpLabel" style="color:var(--neon-purple)">MAX JUMP: 2</div>
+        <!-- 개편된 개별 HUD 뱃지들 -->
+        <div class="panel progress-wrap hud-item" id="levelWrap">
+          <div class="progress-head">
+            <span>LEVEL</span>
+            <span id="progressText" style="color: var(--neon-cyan)">LV 1</span>
           </div>
-          <div class="panel progress-wrap">
-            <div class="progress-head">
-              <span>LEVEL</span>
-              <span id="progressText" style="color: var(--neon-cyan)">LV 1</span>
-            </div>
-            <div class="progress-bar">
-              <div class="progress-fill" id="progressFill"></div>
-            </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
           </div>
         </div>
 
+        <div class="panel badge hud-item" id="speedLabel" style="color:var(--neon-green)">Speed: 1.0x</div>
+        <div class="panel badge hud-item" id="scoreLabel" style="color:var(--neon-gold); font-size: 16px; border-color: var(--neon-gold);">SCORE: 0</div>
+        
+        <div class="panel badge hud-item" id="attemptsLabel">Attempt 1</div>
+        <div class="panel badge hud-item" id="jumpLabel" style="color:var(--neon-purple)">MAX JUMP: 2</div>
+
+        <!-- 콤보 디스플레이 -->
         <div id="comboDisplay" class="combo-display hidden">COMBO x2</div>
       </div>
 
-      <div class="panel fuel-wrap" id="fuelWrap">
+      <div class="panel fuel-wrap hud-item" id="fuelWrap">
         <div class="fuel-head">
             <span>FLIGHT FUEL</span>
             <span id="fuelText">100%</span>
@@ -589,8 +530,12 @@
         
         <!-- Setup / Lobby Card -->
         <div id="setupCard" class="card">
-          <h1 class="title">NEON PULSE</h1>
-          <p class="subtitle hide-mobile">자신만의 캐릭터를 커스텀하고 끝없이 달려보세요!</p>
+          <!-- 게임 제목 & 버전 정보 배치 -->
+          <div style="position: relative; display: inline-block; margin-bottom: 16px;">
+            <h1 class="title">NEON PULSE</h1>
+            <span style="position: absolute; right: -25px; bottom: 2px; font-size: 13px; font-weight: 800; color: var(--neon-cyan); letter-spacing: 1px;">v1.2</span>
+          </div>
+          <p class="subtitle hide-mobile" style="margin-top: 0;">자신만의 캐릭터를 커스텀하고 끝없이 달려보세요!</p>
           
           <div class="lobby-grid">
               <div class="input-group span-2">
@@ -626,13 +571,17 @@
           </div>
 
           <button id="muteBtn" class="sound-toggle">🔊 Sound: ON</button>
+
+          <!-- 개발자 크레딧을 게임 화면 외부인 메인 메뉴 하단으로 이동 -->
+          <div style="margin-top: 24px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.4); text-align: center;">
+            Created by <span style="color: rgba(255, 255, 255, 0.7);">[max / kdc916@naver.com]</span>
+          </div>
         </div>
 
         <!-- Result / Game Over Card -->
         <div id="resultCard" class="card hidden">
           <h2 class="title" id="resultTitle">SYSTEM FAILED</h2>
           <p class="subtitle hide-mobile" id="resultText">Score: 0</p>
-          <div class="new-record hidden" id="newRecordText">🎉 NEW BEST RECORD! 🎉</div>
           <div class="rank-text" id="resultRank">Rank: #??? (Top ?%)</div>
           <div class="action-row" style="margin-top: 20px;">
             <button id="retryBtn" class="action-btn btn-start">RETRY</button>
@@ -643,8 +592,6 @@
       </div>
 
       <div class="hint hidden" id="hintText">Tap / Space to Jump · R to Retry</div>
-      
-      <div class="credit">Created by <span>[max / kdc916@naver.com]</span></div>
     </div>
   </div>
 
@@ -661,6 +608,7 @@
         coyoteTime: 0.12, baseSpeed: 500, maxSpeed: 1200, speedAccel: 15,
         deathDelay: 1.2,
         dprMax: 2,
+        ceilY: 100 // [신규] UI와 절대 겹치지 않게 게임 진행 천장 100px 확보
       };
 
       // ==========================================
@@ -675,9 +623,7 @@
         attempts: document.getElementById('attemptsLabel'),
         speed: document.getElementById('speedLabel'),
         jump: document.getElementById('jumpLabel'),
-        star: document.getElementById('starLabel'),
         score: document.getElementById('scoreLabel'),
-        bestScore: document.getElementById('bestScoreLabel'),
         progText: document.getElementById('progressText'),
         progFill: document.getElementById('progressFill'),
         comboDisplay: document.getElementById('comboDisplay'), 
@@ -686,7 +632,6 @@
         resTitle: document.getElementById('resultTitle'),
         resText: document.getElementById('resultText'),
         resRank: document.getElementById('resultRank'),
-        newRecord: document.getElementById('newRecordText'),
         
         nickname: document.getElementById('nicknameInput'),
         colorSel: document.getElementById('colorSelect'),
@@ -705,19 +650,14 @@
         hint: document.getElementById('hintText')
       };
 
-      let savedBest = 0;
-      try { savedBest = parseInt(localStorage.getItem('neonPulseBestScore')) || 0; } catch(e) {}
-
       const game = {
         state: 'setup', 
-        attempts: 1, score: 0, stars: 0, bestScore: savedBest,
+        attempts: 1, score: 0, stars: 0,
         currentLevel: 1, levelUpTimer: 0,
         starCombo: 0, comboTimer: 0, 
         hitStop: 0,
         timer: 0, muted: false, flash: 0, shakeTime: 0, shakeMag: 0, audioInit: false,
       };
-
-      if (UI.bestScore) UI.bestScore.textContent = `BEST: ${game.bestScore}`;
 
       const input = { pressed: false, jumpBuffer: 0 };
 
@@ -939,17 +879,18 @@
       // ==========================================
       // 4. DYNAMIC LEVEL GENERATION
       // ==========================================
-      const spike = (x, flip=false, w=40, h=40) => ({ type: flip ? 'spike_down' : 'spike', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#f0f', fatalHit: false });
-      const block = (x, flip=false, w=50, h=60) => ({ type: 'block', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#0ff', fatalHit: false });
-      const superBlock = (x, flip=false, h=160) => ({ type: 'block', x, y: flip ? 50 : CONFIG.groundY - h, w: 50, h, color: '#b026ff', fatalHit: false });
+      // [수정] 모든 장애물의 상단 Y값을 50에서 CONFIG.ceilY(100)로 내림
+      const spike = (x, flip=false, w=40, h=40) => ({ type: flip ? 'spike_down' : 'spike', x, y: flip ? CONFIG.ceilY : CONFIG.groundY - h, w, h, color: '#f0f', fatalHit: false });
+      const block = (x, flip=false, w=50, h=60) => ({ type: 'block', x, y: flip ? CONFIG.ceilY : CONFIG.groundY - h, w, h, color: '#0ff', fatalHit: false });
+      const superBlock = (x, flip=false, h=160) => ({ type: 'block', x, y: flip ? CONFIG.ceilY : CONFIG.groundY - h, w: 50, h, color: '#b026ff', fatalHit: false });
       const plat = (x, y, w=180) => ({ type: 'platform', x, y, w, h: 20, color: '#39ff14', fatalHit: false });
       const flightItem = (x, y) => ({ type: 'item_flight', x, y, r: 30, w: 60, h: 60, used: false, color: '#ffea00' });
-      const rhombus = (x, flip=false, size=60) => ({ type: 'rhombus', x, y: flip ? 50 : CONFIG.groundY - size, w: size, h: size, color: '#ff0055', fatalHit: false });
-      const trap = (x, flip=false, w=80, h=80) => ({ type: 'trapezoid', narrow: flip ? 'bottom' : 'top', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#ff9d00', fatalHit: false });
+      const rhombus = (x, flip=false, size=60) => ({ type: 'rhombus', x, y: flip ? CONFIG.ceilY : CONFIG.groundY - size, w: size, h: size, color: '#ff0055', fatalHit: false });
+      const trap = (x, flip=false, w=80, h=80) => ({ type: 'trapezoid', narrow: flip ? 'bottom' : 'top', x, y: flip ? CONFIG.ceilY : CONFIG.groundY - h, w, h, color: '#ff9d00', fatalHit: false });
       const star = (x, y) => ({ type: 'star', x, y, w: 30, h: 30, collected: false });
       const portalGrav = (x, y, dir) => ({ type: 'portal_grav', x, y, w: 60, h: 100, dir, used: false });
       const orbDash = (x, y) => ({ type: 'orb_dash', x, y, r: 24, w: 48, h: 48, used: false, color: '#ff0055' });
-      const glassWall = (x, flip=false, h=150) => ({ type: 'glass', x, y: flip ? 50 : CONFIG.groundY - h, w: 40, h, destroyed: false, color: '#ff0055', fatalHit: false });
+      const glassWall = (x, flip=false, h=150) => ({ type: 'glass', x, y: flip ? CONFIG.ceilY : CONFIG.groundY - h, w: 40, h, destroyed: false, color: '#ff0055', fatalHit: false });
 
       function generateNextChunk(cx, isFlipped, index, currentLevel = 1) {
         const list = [];
@@ -981,7 +922,7 @@
             } else if (rareType < 0.75) {
                 let curF = mF;
                 for(let i=0; i<5; i++) {
-                    list.push(portalGrav(nextX, curF ? 50 : CONFIG.groundY - 100, curF ? 'down' : 'up'));
+                    list.push(portalGrav(nextX, curF ? CONFIG.ceilY : CONFIG.groundY - 100, curF ? 'down' : 'up'));
                     list.push(star(nextX + 300 * gapMulti, CONFIG.height / 2));
                     curF = !curF;
                     nextX += 700 * gapMulti; 
@@ -1011,11 +952,11 @@
             list.push(glassWall(nextX + 300 * gapMulti, mF, 250));
             nextX += doubleJumpGap;
         } else if (rand < 0.60) {
-            list.push(portalGrav(nextX, mF ? 50 : CONFIG.groundY - 100, mF ? 'down' : 'up')); nextX += baseGap;
+            list.push(portalGrav(nextX, mF ? CONFIG.ceilY : CONFIG.groundY - 100, mF ? 'down' : 'up')); nextX += baseGap;
             list.push(block(nextX, sF, 50, 80));
             list.push(star(nextX + 25, sF ? 140 : CONFIG.groundY - 140));
             nextX += doubleJumpGap;
-            list.push(portalGrav(nextX, sF ? 50 : CONFIG.groundY - 100, sF ? 'down' : 'up')); nextX += baseGap * 1.5; 
+            list.push(portalGrav(nextX, sF ? CONFIG.ceilY : CONFIG.groundY - 100, sF ? 'down' : 'up')); nextX += baseGap * 1.5; 
             list.push(spike(nextX, mF)); nextX += baseGap;
         } else if (rand < 0.75) {
             const h = 130 + Math.random() * 30;
@@ -1125,11 +1066,9 @@
 
         if (UI.attempts) UI.attempts.textContent = `ATTEMPT ${game.attempts}`;
         if (UI.speed) UI.speed.textContent = `Speed: 1.0x`;
-        if (UI.star) UI.star.textContent = `⭐ 0`;
         if (UI.score) UI.score.textContent = `SCORE: 0`;
         updateUIJump(2, 'var(--neon-purple)');
         if (UI.fuelWrap) UI.fuelWrap.classList.remove('active');
-        if (UI.newRecord) UI.newRecord.classList.add('hidden');
         if (UI.comboDisplay) UI.comboDisplay.classList.add('hidden');
         if (UI.hint) UI.hint.classList.add('hidden'); 
         
@@ -1155,13 +1094,6 @@
         const finalScore = game.score;
         const rankNum = Math.max(1, 10000 - Math.floor(finalScore / 10)); 
         const topPct = Math.max(0.01, (rankNum / 10000) * 100).toFixed(2);
-
-        if (finalScore > game.bestScore) {
-            game.bestScore = finalScore;
-            try { localStorage.setItem('neonPulseBestScore', game.bestScore); } catch(e) {}
-            if (UI.bestScore) UI.bestScore.textContent = `BEST: ${game.bestScore}`;
-            if (UI.newRecord) UI.newRecord.classList.remove('hidden'); 
-        }
 
         if (UI.resTitle) {
             UI.resTitle.textContent = 'SYSTEM FAILED';
@@ -1425,7 +1357,7 @@
         player.grounded = false;
 
         const floorY = CONFIG.groundY - player.h;
-        const ceilY = 50; 
+        const ceilY = CONFIG.ceilY; // [적용] 변경된 천장 한계값
 
         if (!player.gravityFlipped) {
             if (player.y >= floorY) { player.y = floorY; if (player.vy > 0) { player.vy = 0; player.grounded = true; player.coyote = CONFIG.coyoteTime; player.jumps = 0; } }
@@ -1448,7 +1380,6 @@
             if (ob.type === 'star' && !ob.collected) {
                 if (checkCollision(pRect, hitbox)) {
                     ob.collected = true; game.stars++;
-                    if (UI.star) UI.star.textContent = `⭐ ${game.stars}`;
                     playSound(900, 0.1, 'sine', 0.1);
                     createRing(sx + ob.w/2, ob.y + ob.h/2, '#ffea00');
                     
@@ -1753,16 +1684,25 @@
           ctx.beginPath(); ctx.moveTo(vpX + i * 100, 0); ctx.lineTo(vpX + i * 300, CONFIG.height - CONFIG.groundY); ctx.stroke();
         }
         
-        ctx.translate(0, -CONFIG.groundY + 50);
+        // 바닥 그리드 한계선을 변경된 천장값(ceilY)으로 매칭
+        ctx.translate(0, -CONFIG.groundY + CONFIG.ceilY);
         ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(CONFIG.width, 0); ctx.stroke();
         ctx.restore();
       }
 
       function drawGround() {
-        ctx.fillStyle = '#0a0a14'; ctx.fillRect(0, CONFIG.groundY, CONFIG.width, CONFIG.height - CONFIG.groundY);
-        ctx.shadowColor = world.themeColor; ctx.shadowBlur = 10 * world.pulse; ctx.fillStyle = world.themeColor;
-        ctx.fillRect(0, CONFIG.groundY, CONFIG.width, 3);
-        ctx.fillRect(0, 48, CONFIG.width, 2); ctx.shadowBlur = 0;
+        ctx.fillStyle = '#0a0a14'; 
+        ctx.fillRect(0, CONFIG.groundY, CONFIG.width, CONFIG.height - CONFIG.groundY); // 바닥 아래 영역
+        ctx.fillRect(0, 0, CONFIG.width, CONFIG.ceilY); // [수정] 천장 위 UI 안전 지대 영역도 바닥처럼 어둡게 채움
+
+        ctx.shadowColor = world.themeColor; 
+        ctx.shadowBlur = 10 * world.pulse; 
+        ctx.fillStyle = world.themeColor;
+        
+        ctx.fillRect(0, CONFIG.groundY, CONFIG.width, 3); // 하단 라인
+        ctx.fillRect(0, CONFIG.ceilY - 2, CONFIG.width, 3); // [수정] 상단 라인 위치를 장애물이 생성되는 천장 기준선(ceilY)으로 일치시킴
+        
+        ctx.shadowBlur = 0;
       }
 
       function drawStarShape(ctxTarget, cx, cy, spikes, outerR, innerR, color) {
