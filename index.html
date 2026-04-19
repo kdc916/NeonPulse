@@ -78,7 +78,7 @@
     }
 
     /* -------------------------------------------
-       [개편] 반응형 인게임 HUD 개별 절대 배치
+       인게임 HUD 개별 절대 배치
     ------------------------------------------- */
     #hud {
       position: fixed;
@@ -94,16 +94,16 @@
 
     /* 가로 모드 (Landscape & Desktop) 기본 레이아웃 */
     #levelWrap {
-      top: max(12px, env(safe-area-inset-top));
+      top: max(10px, env(safe-area-inset-top)); /* 더 위로 올려서 게임과 분리 */
       left: 50%;
       transform: translateX(-50%);
     }
     #speedLabel {
-      top: max(16px, env(safe-area-inset-top));
+      top: max(10px, env(safe-area-inset-top));
       left: max(20px, env(safe-area-inset-left));
     }
     #scoreLabel {
-      top: max(16px, env(safe-area-inset-top));
+      top: max(10px, env(safe-area-inset-top));
       right: max(20px, env(safe-area-inset-right));
     }
     #attemptsLabel {
@@ -118,7 +118,7 @@
     /* 세로 모드 (Portrait) 레이아웃 */
     @media (orientation: portrait) {
       #levelWrap {
-        top: max(40px, env(safe-area-inset-top));
+        top: max(20px, env(safe-area-inset-top));
       }
       #scoreLabel {
         top: auto;
@@ -134,15 +134,17 @@
       }
       #attemptsLabel {
         bottom: max(65px, env(safe-area-inset-bottom));
+        left: max(20px, env(safe-area-inset-left));
       }
       #jumpLabel {
         bottom: max(65px, env(safe-area-inset-bottom));
+        right: max(20px, env(safe-area-inset-right));
       }
       .combo-display {
-        top: 20% !important;
+        top: max(80px, env(safe-area-inset-top)) !important;
       }
       .fuel-wrap {
-        top: 25% !important;
+        top: max(140px, env(safe-area-inset-top)) !important;
       }
     }
 
@@ -203,28 +205,60 @@
       transition: width 0.1s linear;
     }
 
-    /* 콤보 UI - 최상단 중앙 고정 */
+    /* 콤보 UI - 사이버펑크 네온 글리치 컨셉 */
     .combo-display {
       position: absolute;
       top: max(85px, env(safe-area-inset-top));
       left: 50%;
-      font-size: 42px;
+      font-size: 46px;
       font-weight: 800;
       font-style: italic;
-      color: var(--neon-gold);
-      text-shadow: 0 0 15px var(--neon-gold), 2px 2px 0px rgba(0,0,0,0.8);
-      transition: opacity 0.3s, transform 0.1s;
+      color: #fff;
+      text-shadow: 0 0 15px var(--neon-cyan), 0 0 30px var(--neon-cyan);
       opacity: 1;
-      transform: translateX(-50%) scale(1) rotate(-5deg);
+      transform: translateX(-50%) scale(1);
+      transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+      z-index: 300;
+      pointer-events: none;
     }
+    
     .combo-display.hidden {
       opacity: 0;
-      transform: translateX(-50%) scale(0.5) rotate(0deg);
+      transform: translateX(-50%) scale(0.5);
     }
+    
     .combo-display.pop {
-      transform: translateX(-50%) scale(1.3) rotate(-10deg);
-      color: var(--neon-pink);
-      text-shadow: 0 0 25px var(--neon-pink), 2px 2px 0px rgba(0,0,0,0.8);
+      animation: glitch-combo 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+      color: #fff;
+    }
+
+    @keyframes glitch-combo {
+      0% {
+        transform: translateX(-50%) scale(1);
+        text-shadow: 0 0 15px var(--neon-cyan);
+      }
+      15% {
+        transform: translateX(-52%) scale(1.4) skewX(-15deg);
+        text-shadow: -4px 0 var(--neon-pink), 4px 0 var(--neon-gold), 0 0 20px var(--neon-cyan);
+      }
+      30% {
+        transform: translateX(-48%) scale(1.2) skewX(10deg);
+        text-shadow: 4px 0 var(--neon-pink), -4px 0 var(--neon-gold), 0 0 30px var(--neon-cyan);
+      }
+      45% {
+        transform: translateX(-51%) scale(1.35) skewX(-5deg);
+        text-shadow: -2px -2px var(--neon-pink), 2px 2px var(--neon-gold), 0 0 40px var(--neon-cyan);
+        filter: hue-rotate(45deg);
+      }
+      60% {
+        transform: translateX(-49%) scale(1.25) skewX(5deg);
+        text-shadow: 2px 2px var(--neon-pink), -2px -2px var(--neon-gold), 0 0 20px var(--neon-cyan);
+        filter: hue-rotate(0deg);
+      }
+      100% {
+        transform: translateX(-50%) scale(1.3);
+        text-shadow: 0 0 25px var(--neon-cyan), 0 0 50px var(--neon-cyan);
+      }
     }
 
     /* 비행 연료 바 */
@@ -394,6 +428,10 @@
       cursor: pointer;
       border: none;
       transition: all 0.15s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
     }
 
     .btn-random {
@@ -482,6 +520,23 @@
     }
     .hint.hidden { display: none !important; }
 
+    /* 시스템 코치(로컬) 박스 스타일 */
+    .ai-box {
+      margin: 15px 0; 
+      padding: 12px; 
+      border-radius: 8px; 
+      background: rgba(10, 5, 20, 0.7); 
+      border: 1px solid rgba(0, 255, 255, 0.3); 
+      font-size: 13px; 
+      color: #e0e0ff; 
+      min-height: 60px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      flex-direction: column; 
+      gap: 8px;
+    }
+
     @keyframes pulse {
       0% { opacity: 0.6; }
       50% { opacity: 1; box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); }
@@ -501,7 +556,7 @@
       .lobby-grid { gap: 10px; margin-bottom: 12px; }
       .lobby-input, .lobby-select { padding: 10px; font-size: 14px; }
       .action-btn { padding: 12px 8px; font-size: 14px; }
-      .badge { font-size: 13px; padding: 6px 12px; }
+      .badge { font-size: 12px; padding: 6px 10px; }
     }
 
     @media (max-height: 600px) and (orientation: landscape) {
@@ -520,7 +575,6 @@
       <canvas id="game"></canvas>
 
       <div id="hud">
-        <!-- 개별 절대 배치(Absolute Positioning)를 통해 깜빡임 및 간섭 방지 -->
         <div class="panel progress-wrap hud-item" id="levelWrap">
           <div class="progress-head">
             <span>LEVEL</span>
@@ -557,14 +611,17 @@
           <!-- 게임 제목 & 버전 정보 배치 -->
           <div style="position: relative; display: inline-block; margin-bottom: 16px;">
             <h1 class="title">NEON PULSE</h1>
-            <span style="position: absolute; right: -30px; bottom: 2px; font-size: 14px; font-weight: 800; color: var(--neon-cyan); letter-spacing: 1px;">v1.4</span>
+            <span style="position: absolute; right: -30px; bottom: 2px; font-size: 14px; font-weight: 800; color: var(--neon-cyan); letter-spacing: 1px;">v1.6</span>
           </div>
           <p class="subtitle hide-mobile" style="margin-top: 0;">자신만의 캐릭터를 커스텀하고 끝없이 달려보세요!</p>
           
           <div class="lobby-grid">
               <div class="input-group span-2">
                   <label>Nickname</label>
-                  <input type="text" id="nicknameInput" class="lobby-input" placeholder="PLAYER" maxlength="12" value="PLAYER" autocomplete="off" />
+                  <div style="display:flex; gap:8px;">
+                    <input type="text" id="nicknameInput" class="lobby-input" placeholder="PLAYER" maxlength="12" value="PLAYER" autocomplete="off" style="flex:1;" />
+                    <button id="aiNameBtn" class="action-btn" style="flex:0 0 auto; width: auto; padding: 10px; font-size:12px; border:1px solid var(--neon-purple); background: rgba(176, 38, 255, 0.1); color: #fff;">🎲 랜덤 닉네임</button>
+                  </div>
               </div>
               <div class="input-group">
                   <label>Body Color</label>
@@ -608,7 +665,14 @@
           <p class="subtitle hide-mobile" id="resultText">Score: 0</p>
           <div class="new-record hidden" id="newRecordText">🎉 NEW BEST RECORD! 🎉</div>
           <div class="rank-text" id="resultRank">Rank: #??? (Top ?%)</div>
-          <div class="action-row" style="margin-top: 20px;">
+          
+          <!-- 시스템 코치 피드백 영역 -->
+          <div class="ai-box">
+            <div id="aiCoachText" style="line-height: 1.5; text-align: center;">💡 시스템 코치의 플레이 팁을 확인해보세요.</div>
+            <button id="aiCoachBtn" class="action-btn" style="padding: 8px 12px; font-size: 12px; border: 1px solid var(--neon-cyan); background: rgba(0, 255, 255, 0.1); color: var(--neon-cyan); width: 100%;">💡 코치 피드백 듣기</button>
+          </div>
+
+          <div class="action-row">
             <button id="retryBtn" class="action-btn btn-start">RETRY</button>
             <button id="backMenuBtn" class="action-btn btn-random">MAIN MENU</button>
           </div>
@@ -633,7 +697,7 @@
         coyoteTime: 0.12, baseSpeed: 500, maxSpeed: 1200, speedAccel: 15,
         deathDelay: 1.2,
         dprMax: 2,
-        ceilY: 120 // UI 보호용 천장 공간 확장 (100 -> 120px)
+        ceilY: 130 // UI 보호용 천장 여백 추가 확보 (120 -> 130px)
       };
 
       // ==========================================
@@ -673,7 +737,12 @@
         fuelWrap: document.getElementById('fuelWrap'),
         fuelFill: document.getElementById('fuelFill'),
         fuelText: document.getElementById('fuelText'),
-        hint: document.getElementById('hintText')
+        hint: document.getElementById('hintText'),
+
+        // Local Random Elements
+        aiNameBtn: document.getElementById('aiNameBtn'),
+        aiCoachBtn: document.getElementById('aiCoachBtn'),
+        aiCoachText: document.getElementById('aiCoachText')
       };
 
       let savedBest = 0;
@@ -683,8 +752,8 @@
         state: 'setup', 
         attempts: 1, score: 0, stars: 0, bestScore: savedBest,
         currentLevel: 1, levelUpTimer: 0,
-        starCombo: 0, comboTimer: 0, comboUITimer: 0, // [수정] 콤보 UI 전용 타이머 추가
-        hitStop: 0,
+        starCombo: 0, comboTimer: 0, comboUITimer: 0,
+        hitStop: 0, deathCause: '',
         timer: 0, muted: false, flash: 0, shakeTime: 0, shakeMag: 0, audioInit: false,
       };
 
@@ -725,7 +794,7 @@
       let audioCtx = null;
 
       // ==========================================
-      // 3. LOBBY & PREVIEW LOGIC
+      // 3. LOBBY, PREVIEW & LOGIC
       // ==========================================
       function initDropdowns() {
           Object.keys(CUSTOM_COLORS).forEach(c => UI.colorSel.add(new Option(c, c)));
@@ -752,6 +821,29 @@
         UI.faceSel.value = playerDesign.face;
         drawPreview();
       }
+
+      // Random Nickname Generator (한글 사이버펑크 닉네임으로 변경)
+      UI.aiNameBtn.addEventListener('click', () => {
+        const adjs = ['네온', '사이버', '레트로', '공허의', '픽셀', '터보', '하이퍼', '소닉', '제로', '블레이즈', '신스', '노바', '환영의', '빛의', '다크'];
+        const nouns = ['라이더', '펄스', '러너', '울프', '해커', '블레이드', '고스트', '바이퍼', '팬텀', '크래시', '스타', '닌자', '사무라이'];
+        const adj = adjs[Math.floor(Math.random() * adjs.length)];
+        const noun = nouns[Math.floor(Math.random() * nouns.length)];
+        UI.nickname.value = `${adj}${noun}`.substring(0, 12);
+      });
+
+      // System Coach Feedback
+      UI.aiCoachBtn.addEventListener('click', () => {
+        UI.aiCoachBtn.style.display = "none";
+        const feedbacks = [
+          `아쉽네요! [${game.deathCause}] 구간에서 점프 타이밍을 조금만 더 일찍 잡아보세요.`,
+          `다음 번엔 [${game.deathCause}] 패턴을 완벽히 넘을 수 있을 거예요! 리듬을 타세요!`,
+          `속도가 너무 빨랐나요? [${game.deathCause}]에 주의하며 침착하게 대응하세요.`,
+          `${game.score}점! 훌륭합니다. [${game.deathCause}]에서 조금만 더 집중했다면 좋았겠네요.`,
+          `괜찮아요, ${playerDesign.nickname}님! [${game.deathCause}] 패턴도 곧 익숙해질 겁니다!`
+        ];
+        const feedback = feedbacks[Math.floor(Math.random() * feedbacks.length)];
+        UI.aiCoachText.innerHTML = `<span style="color: var(--neon-cyan);">[시스템 코치]</span><br/>"${feedback}"`;
+      });
 
       function buildShapePath(ctxTarget, shapeType, size) {
           ctxTarget.beginPath();
@@ -934,11 +1026,9 @@
         if (index > 1 && Math.random() < 0.15) {
             const rareType = Math.random();
             if (rareType < 0.25) {
-                // [버그 수정] 보너스 스타 라인이 천장/바닥과 겹치지 않도록 안전한 중앙 영역(centerY) 기준으로 파도치게 수정
                 const centerY = (CONFIG.groundY + CONFIG.ceilY) / 2;
                 for(let i=0; i<12; i++) {
                     const yOffset = Math.sin(i * 0.6) * 120;
-                    // 중력 반전 여부에 따라 위상을 뒤집어 자연스럽게 연출
                     const targetY = mF ? centerY - yOffset : centerY + yOffset; 
                     list.push(star(nextX, targetY));
                     nextX += 150 * gapMulti;
@@ -955,7 +1045,7 @@
                 let curF = mF;
                 for(let i=0; i<5; i++) {
                     list.push(portalGrav(nextX, curF ? CONFIG.ceilY : CONFIG.groundY - 100, curF ? 'down' : 'up'));
-                    list.push(star(nextX + 300 * gapMulti, CONFIG.height / 2));
+                    list.push(star(nextX + 300 * gapMulti, (CONFIG.groundY + CONFIG.ceilY)/2));
                     curF = !curF;
                     nextX += 700 * gapMulti; 
                 }
@@ -965,7 +1055,7 @@
                 for(let i=0; i<5; i++) {
                     list.push(spike(nextX, false, 200, 100)); 
                     list.push(spike(nextX, true, 200, 100));  
-                    list.push(star(nextX + 350 * gapMulti, CONFIG.height / 2));
+                    list.push(star(nextX + 350 * gapMulti, (CONFIG.groundY + CONFIG.ceilY)/2));
                     nextX += 500 * gapMulti;
                 }
                 nextX += baseGap;
@@ -1009,7 +1099,7 @@
                 } else {
                     list.push(trap(nextX, mF, 100, 160));
                 }
-                list.push(star(nextX + 50, CONFIG.height / 2));
+                list.push(star(nextX + 50, (CONFIG.groundY + CONFIG.ceilY)/2));
                 nextX += 600 * gapMulti; 
             }
             nextX += baseGap;
@@ -1065,8 +1155,9 @@
         game.levelUpTimer = 0;
         game.starCombo = 0;
         game.comboTimer = 0;
-        game.comboUITimer = 0; // [수정] UI 타이머 리셋 추가
+        game.comboUITimer = 0; 
         game.hitStop = 0;
+        game.deathCause = '';
         
         world.scrollX = 0;
         world.speed = CONFIG.baseSpeed;
@@ -1102,6 +1193,7 @@
         if (UI.score) UI.score.textContent = `SCORE: 0`;
         updateUIJump(2, 'var(--neon-purple)');
         if (UI.fuelWrap) UI.fuelWrap.classList.remove('active');
+        if (UI.newRecord) UI.newRecord.classList.add('hidden');
         if (UI.comboDisplay) UI.comboDisplay.classList.add('hidden');
         if (UI.hint) UI.hint.classList.add('hidden'); 
         
@@ -1128,11 +1220,9 @@
         const rankNum = Math.max(1, 10000 - Math.floor(finalScore / 10)); 
         const topPct = Math.max(0.01, (rankNum / 10000) * 100).toFixed(2);
 
-        if (finalScore > game.bestScore) {
-            game.bestScore = finalScore;
-            try { localStorage.setItem('neonPulseBestScore', game.bestScore); } catch(e) {}
-            if (UI.newRecord) UI.newRecord.classList.remove('hidden'); 
-        }
+        // 로컬 코치 영역 초기화
+        UI.aiCoachBtn.style.display = "block";
+        UI.aiCoachText.textContent = "💡 시스템 코치의 플레이 팁을 확인해보세요.";
 
         if (UI.resTitle) {
             UI.resTitle.textContent = 'SYSTEM FAILED';
@@ -1140,8 +1230,7 @@
             UI.resTitle.style.filter = 'drop-shadow(0 0 8px rgba(255, 0, 255, 0.4))';
         }
         
-        // 최종 결과 화면에는 별 개수 등 자세한 정보 출력 유지
-        if (UI.resText) UI.resText.innerHTML = `Player: <b>${playerDesign.nickname}</b><br>Score: ${finalScore}<br>Stars: ${game.stars}`;
+        if (UI.resText) UI.resText.innerHTML = `Player: <b>${playerDesign.nickname}</b><br>Score: ${finalScore}`;
         if (UI.resRank) UI.resRank.textContent = `Rank: #${rankNum} (Top ${topPct}%)`;
       }
 
@@ -1424,8 +1513,8 @@
                     createRing(sx + ob.w/2, ob.y + ob.h/2, '#ffea00');
                     
                     game.starCombo++;
-                    game.comboTimer = 2.0; // 콤보가 이어지는 실제 판정 시간 (유지)
-                    game.comboUITimer = 0.8; // [수정] 화면에 UI가 노출되는 시각적 시간 (짧게 변경)
+                    game.comboTimer = 2.0; 
+                    game.comboUITimer = 0.8; 
                     triggerComboUI(); 
                     
                     const bonus = 350 + (game.starCombo * 50);
@@ -1492,6 +1581,7 @@
                    } else {
                        ob.fatalHit = true;
                        game.hitStop = 0.1; 
+                       game.deathCause = '유리 장벽';
                        showResult(); break;
                    }
                }
@@ -1506,6 +1596,7 @@
                if (checkCollision(pRect, hitbox)) {
                  ob.fatalHit = true;
                  game.hitStop = 0.1; 
+                 game.deathCause = ob.type.includes('spike') ? '가시밭' : ob.type === 'rhombus' ? '마름모 함정' : '거대 블록';
                  showResult(); break;
                }
             }
@@ -1522,7 +1613,6 @@
         if (game.shakeTime > 0) game.shakeTime -= dt;
         if (game.levelUpTimer > 0) game.levelUpTimer -= dt;
         
-        // [수정] 기계적인 콤보 유지 시간과 시각적인 UI 노출 시간을 분리
         if (game.comboTimer > 0) {
             game.comboTimer -= dt;
             if (game.comboTimer <= 0) {
@@ -1533,7 +1623,7 @@
         if (game.comboUITimer > 0) {
             game.comboUITimer -= dt;
             if (game.comboUITimer <= 0 && UI.comboDisplay) {
-                UI.comboDisplay.classList.add('hidden'); // 0.8초 후 화면에서만 사라짐
+                UI.comboDisplay.classList.add('hidden'); 
             }
         }
 
@@ -1732,7 +1822,6 @@
           ctx.beginPath(); ctx.moveTo(vpX + i * 100, 0); ctx.lineTo(vpX + i * 300, CONFIG.height - CONFIG.groundY); ctx.stroke();
         }
         
-        // 바닥 그리드 한계선을 변경된 천장값(ceilY)으로 매칭
         ctx.translate(0, -CONFIG.groundY + CONFIG.ceilY);
         ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(CONFIG.width, 0); ctx.stroke();
         ctx.restore();
@@ -1741,14 +1830,14 @@
       function drawGround() {
         ctx.fillStyle = '#0a0a14'; 
         ctx.fillRect(0, CONFIG.groundY, CONFIG.width, CONFIG.height - CONFIG.groundY);
-        ctx.fillRect(0, 0, CONFIG.width, CONFIG.ceilY); // 천장 위 UI 안전 지대 영역 어둡게 칠함
+        ctx.fillRect(0, 0, CONFIG.width, CONFIG.ceilY);
 
         ctx.shadowColor = world.themeColor; 
         ctx.shadowBlur = 10 * world.pulse; 
         ctx.fillStyle = world.themeColor;
         
         ctx.fillRect(0, CONFIG.groundY, CONFIG.width, 3); 
-        ctx.fillRect(0, CONFIG.ceilY - 2, CONFIG.width, 3); // 상단 라인 위치
+        ctx.fillRect(0, CONFIG.ceilY - 2, CONFIG.width, 3); 
         
         ctx.shadowBlur = 0;
       }
