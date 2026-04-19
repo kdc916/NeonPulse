@@ -82,15 +82,17 @@
       z-index: 100; /* 스캔라인 위로 UI 노출 */
     }
 
-    .topbar {
+    /* [개선] 가로/세로 화면에 맞춰 하단 빈 공간 및 지하 영역을 활용하는 HUD 구조 */
+    .hud-bottom {
       position: absolute;
-      top: 20px;
-      left: 20px;
-      right: 20px;
+      bottom: max(20px, env(safe-area-inset-bottom));
+      left: max(20px, env(safe-area-inset-left));
+      right: max(20px, env(safe-area-inset-right));
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: flex-end;
       gap: 12px;
+      z-index: 10;
     }
 
     .panel {
@@ -153,8 +155,8 @@
     /* 전용 콤보 UI */
     .combo-display {
       position: absolute;
-      top: 90px;
-      right: 30px;
+      top: max(80px, env(safe-area-inset-top));
+      right: max(30px, env(safe-area-inset-right));
       font-size: 42px;
       font-weight: 800;
       font-style: italic;
@@ -176,7 +178,7 @@
 
     .fuel-wrap {
       position: absolute;
-      top: 80px;
+      top: max(20px, env(safe-area-inset-top));
       left: 50%;
       transform: translateX(-50%);
       min-width: 300px;
@@ -409,9 +411,10 @@
       animation: blink 0.5s infinite alternate;
     }
 
+    /* 힌트 하단에서 상단 배치로 변경 (하단 UI와 겹침 방지) */
     .hint {
       position: absolute;
-      bottom: 20px;
+      top: 25%;
       left: 50%;
       transform: translateX(-50%);
       padding: 10px 20px;
@@ -427,10 +430,11 @@
       animation: pulse 2s infinite;
     }
 
+    /* 크레딧 좌측 상단 여백으로 이동 (다른 UI 방해 방지) */
     .credit {
       position: absolute;
-      bottom: 15px;
-      right: 20px;
+      top: max(15px, env(safe-area-inset-top));
+      left: max(20px, env(safe-area-inset-left));
       font-size: 13px;
       font-weight: 600;
       color: rgba(255, 255, 255, 0.3);
@@ -460,24 +464,39 @@
       100% { opacity: 0.3; }
     }
 
-    @media (max-width: 768px) {
-      .topbar { top: 10px; left: 10px; right: 10px; flex-direction: column; }
+    /* 모바일 세로모드(Portrait) */
+    @media (max-width: 768px) and (orientation: portrait) {
+      .hud-bottom { 
+        flex-direction: column; 
+        align-items: center; 
+        bottom: max(25px, env(safe-area-inset-bottom));
+        gap: 15px; 
+      }
+      .badge-row { justify-content: center; }
       .badge { font-size: 12px; padding: 6px 10px; }
-      .progress-wrap { width: 100%; min-width: 150px; padding: 10px; }
-      .combo-display { top: 160px; right: 20px; font-size: 28px; }
-      .hint { bottom: max(15px, env(safe-area-inset-bottom)); }
+      .progress-wrap { width: 100%; min-width: unset; max-width: 320px; padding: 10px; }
+      
+      .combo-display { top: max(60px, env(safe-area-inset-top)); right: max(20px, env(safe-area-inset-right)); font-size: 28px; }
+      .hint { top: 20%; }
       .card { padding: 20px; width: 92vw; max-height: 85vh; overflow-y: auto; }
       .title { font-size: 28px; }
       .hide-mobile { display: none !important; }
       .lobby-grid { gap: 10px; margin-bottom: 12px; }
       .lobby-input, .lobby-select { padding: 10px; font-size: 14px; }
       .action-btn { padding: 12px 8px; font-size: 14px; }
-      .credit { font-size: 11px; bottom: 10px; right: 15px; }
+      .credit { font-size: 11px; } 
     }
 
+    /* 모바일 가로모드(Landscape) */
     @media (max-height: 600px) and (orientation: landscape) {
+      .hud-bottom { 
+        bottom: max(15px, env(safe-area-inset-bottom)); 
+      }
+      .badge { font-size: 11px; padding: 4px 8px; }
+      .progress-wrap { min-width: 150px; padding: 8px 12px; }
+      
+      .combo-display { top: max(60px, env(safe-area-inset-top)); }
       .card { padding: 16px 24px; max-height: 90vh; overflow-y: auto; }
-      .combo-display { top: 80px; }
       .hide-mobile { display: none !important; }
       .lobby-grid { gap: 8px; margin-bottom: 8px; }
       .lobby-input, .lobby-select { padding: 8px; }
@@ -491,7 +510,8 @@
       <canvas id="game"></canvas>
 
       <div id="hud">
-        <div class="topbar">
+        <!-- [개선] UI를 화면 하단 및 좌우 여백으로 분산 배치하여 게임 화면을 가리지 않음 -->
+        <div class="hud-bottom">
           <div class="badge-row">
             <div class="panel badge" id="attemptsLabel">Attempt 1</div>
             <div class="panel badge" id="bestScoreLabel" style="color:var(--neon-cyan); border-color: var(--neon-cyan);">BEST: 0</div>
@@ -512,7 +532,6 @@
           </div>
         </div>
 
-        <!-- 콤보 전용 HUD -->
         <div id="comboDisplay" class="combo-display hidden">COMBO x2</div>
 
         <div class="panel fuel-wrap" id="fuelWrap">
@@ -560,7 +579,7 @@
 
             <div class="controls-note hide-mobile">
               PC: <b>Space / Click / ↑</b> &nbsp;&nbsp;|&nbsp;&nbsp; Mobile: <b>화면 터치</b><br>
-              <span style="color:var(--neon-green)">★ 점프 버퍼링 지원: 닿기 직전 미리 눌러도 즉시 점프!</span><br>
+              <span style="color:var(--neon-green)">★ 점프 선입력 지원: 닿기 직전 누르면 착지 즉시 점프!</span><br>
               <span style="color:#aaa;">희귀 패턴: 별의 파도, 대시 돌파, 포탈 러시, 비행 터널</span>
             </div>
 
@@ -619,7 +638,7 @@
         bestScore: document.getElementById('bestScoreLabel'),
         progText: document.getElementById('progressText'),
         progFill: document.getElementById('progressFill'),
-        comboDisplay: document.getElementById('comboDisplay'), // 콤보 HUD
+        comboDisplay: document.getElementById('comboDisplay'), 
         setupCard: document.getElementById('setupCard'),
         resultCard: document.getElementById('resultCard'),
         resTitle: document.getElementById('resultTitle'),
@@ -657,7 +676,6 @@
 
       if (UI.bestScore) UI.bestScore.textContent = `BEST: ${game.bestScore}`;
 
-      // [개선] 점프 버퍼링(선입력) 시스템 도입을 위한 입력 구조체 변경
       const input = { pressed: false, jumpBuffer: 0 };
 
       const CUSTOM_COLORS = {
@@ -856,7 +874,7 @@
         game.state = 'setup';
         UI.resultCard.classList.add('hidden');
         UI.setupCard.classList.remove('hidden');
-        if (UI.comboDisplay) UI.comboDisplay.classList.add('hidden'); // 콤보 HUD 숨김
+        if (UI.comboDisplay) UI.comboDisplay.classList.add('hidden'); 
       }
 
       function startGame() {
@@ -872,7 +890,7 @@
       }
 
       // ==========================================
-      // 4. DYNAMIC LEVEL GENERATION (RARE PATTERNS ADDED)
+      // 4. DYNAMIC LEVEL GENERATION
       // ==========================================
       const spike = (x, flip=false, w=40, h=40) => ({ type: flip ? 'spike_down' : 'spike', x, y: flip ? 50 : CONFIG.groundY - h, w, h, color: '#f0f', fatalHit: false });
       const ceilSpike = (x, w=40, h=40) => ({ type: 'spike_down', x, y: 50, w, h, color: '#f0f', fatalHit: false }); 
@@ -1064,7 +1082,7 @@
         player.isDashing = false;
         player.dashTime = 0;
         
-        input.jumpBuffer = 0; // 버퍼 초기화
+        input.jumpBuffer = 0; 
 
         if (UI.attempts) UI.attempts.textContent = `ATTEMPT ${game.attempts}`;
         if (UI.speed) UI.speed.textContent = `Speed: 1.0x`;
@@ -1109,7 +1127,6 @@
         
         if (UI.resText) UI.resText.innerHTML = `Player: <b>${playerDesign.nickname}</b><br>Score: ${finalScore}<br>Stars: ${game.stars}`;
         if (UI.resRank) UI.resRank.textContent = `Rank: #${rankNum} (Top ${topPct}%)`;
-        if (UI.resultCard) UI.resultCard.classList.remove('hidden');
       }
 
       function updateProgress() {
@@ -1158,7 +1175,6 @@
           if (game.starCombo > 1 && UI.comboDisplay) {
               UI.comboDisplay.textContent = `COMBO x${game.starCombo}!`;
               UI.comboDisplay.classList.remove('hidden');
-              // 애니메이션 리플로우(Reflow)를 통한 Pop 이펙트 재실행
               UI.comboDisplay.classList.remove('pop');
               void UI.comboDisplay.offsetWidth; 
               UI.comboDisplay.classList.add('pop');
@@ -1257,6 +1273,7 @@
         player.jumps = 0;
         player.gravityFlipped = false; 
         player.vy = -CONFIG.jumpForce * 0.6; 
+        player.grounded = false; 
         
         if (UI.fuelWrap) UI.fuelWrap.classList.add('active'); 
         playSound(800, 0.3, 'sine', 0.05);
@@ -1315,7 +1332,6 @@
              if (Math.random() < 0.5) createDust(player.x, player.y + player.h/2, '#ff0055');
              if (player.dashTime <= 0) player.isDashing = false;
         } else {
-             // [개선] 점프 버퍼링 시스템: 0.15초 이내에 눌러둔 키가 있으면 동작 실행
              if (input.jumpBuffer > 0) {
                 let hitAction = false;
 
@@ -1328,7 +1344,7 @@
                       createExplosion(sx, ob.y, '#ffea00');
                       triggerShake(5, 0.1); playSound(600, 0.15, 'triangle', 0.05);
                       hitAction = true; 
-                      input.jumpBuffer = 0; // 버퍼 소모
+                      input.jumpBuffer = 0; 
                       break;
                     }
                   }
@@ -1337,11 +1353,11 @@
                 if (!hitAction) {
                   if (player.grounded || player.coyote > 0) {
                       doJump(false); 
-                      input.jumpBuffer = 0; // 버퍼 소모
+                      input.jumpBuffer = 0; 
                   }
                   else if (player.jumps < player.maxJumps && !player.grounded) {
                       doJump(true); 
-                      input.jumpBuffer = 0; // 버퍼 소모
+                      input.jumpBuffer = 0; 
                   }
                 }
              }
@@ -1395,7 +1411,7 @@
                     
                     game.starCombo++;
                     game.comboTimer = 2.0; 
-                    triggerComboUI(); // 콤보 HUD 업데이트
+                    triggerComboUI(); 
                     
                     const bonus = 350 + (game.starCombo * 50);
                     game.score += bonus;
@@ -1407,6 +1423,7 @@
                 const hitboxDash = { x: sx - ob.r - 20, y: ob.y - ob.r - 20, w: ob.r*2 + 40, h: ob.r*2 + 40 };
                 if (checkCollision(pRect, hitboxDash)) {
                     ob.used = true; player.isDashing = true; player.dashTime = 0.55; player.vy = 0; player.jumps = 1;
+                    player.grounded = false; 
                     createExplosion(sx, ob.y, '#ff0055'); triggerShake(10, 0.2); playSound(400, 0.2, 'sawtooth', 0.05);
                 }
             }
@@ -1627,6 +1644,10 @@
         
         if (game.state === 'dead' || game.state === 'clear') {
           game.timer -= dt;
+          
+          if (game.timer <= 0 && UI.resultCard && UI.resultCard.classList.contains('hidden')) {
+             UI.resultCard.classList.remove('hidden');
+          }
         }
       }
 
@@ -1634,12 +1655,10 @@
       // 8. RENDER LOGIC
       // ==========================================
       function drawParallaxCity() {
-          // [개선] 속도감이 느껴지는 다중 스크롤 파럴랙스(Parallax) 시티 실루엣
           ctx.fillStyle = '#0a0b10';
           const offset1 = world.scrollX * 0.15;
           for(let i = -1; i <= CONFIG.width / 80 + 1; i++) {
               const globalIdx = Math.floor(offset1 / 80) + i;
-              // 인덱스 기반 절차적 높이 생성
               const h = 100 + Math.sin(globalIdx * 12.34) * 80 + Math.cos(globalIdx * 4.5) * 40;
               const w = 60 + Math.sin(globalIdx * 7.8) * 20;
               const x = - (offset1 % 80) + i * 80;
@@ -1665,7 +1684,7 @@
       function drawBackground() {
         ctx.fillStyle = '#050508'; ctx.fillRect(0, 0, CONFIG.width, CONFIG.height);
         
-        drawParallaxCity(); // 시티 실루엣 렌더링
+        drawParallaxCity(); 
 
         ctx.fillStyle = '#fff';
         world.bgParticles.forEach(p => { 
@@ -1992,10 +2011,13 @@
 
       function handlePress() {
         input.pressed = true; 
-        input.jumpBuffer = 0.15; // [개선] 0.15초 (150ms) 점프 선입력 버퍼 
+        input.jumpBuffer = 0.15; 
         tryUnlockAudio();
+        
         if (game.state === 'setup' || game.state === 'menu') startGame();
-        else if (game.state === 'dead' || game.state === 'clear') { resetRun(true); UI.resultCard.classList.add('hidden'); game.state = 'playing'; }
+        else if ((game.state === 'dead' || game.state === 'clear') && game.timer <= -0.5) { 
+            resetRun(true); UI.resultCard.classList.add('hidden'); game.state = 'playing'; 
+        }
       }
 
       function handleRelease() { input.pressed = false; }
@@ -2031,8 +2053,16 @@
 
       UI.btnRandom.addEventListener('click', randomizeDesign);
       UI.btnStart.addEventListener('click', () => { tryUnlockAudio(); startGame(); });
-      UI.btnRetry.addEventListener('click', () => { tryUnlockAudio(); UI.resultCard.classList.add('hidden'); resetRun(true); game.state = 'playing'; });
-      UI.btnMenu.addEventListener('click', () => { resetRun(false); showSetup(); }); 
+      
+      UI.btnRetry.addEventListener('click', () => { 
+          if (game.state === 'dead' && game.timer > -0.5) return;
+          tryUnlockAudio(); UI.resultCard.classList.add('hidden'); resetRun(true); game.state = 'playing'; 
+      });
+      UI.btnMenu.addEventListener('click', () => { 
+          if (game.state === 'dead' && game.timer > -0.5) return;
+          resetRun(false); showSetup(); 
+      });
+      
       UI.btnMute.addEventListener('click', () => {
         game.muted = !game.muted; UI.btnMute.textContent = `🔊 SOUND: ${game.muted ? 'OFF' : 'ON'}`;
       });
