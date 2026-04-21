@@ -533,7 +533,7 @@
         <div id="setupCard" class="card">
           <div style="position: relative; display: inline-block; margin-bottom: 16px;">
             <h1 class="title">NEON PULSE</h1>
-            <span style="position: absolute; right: -30px; bottom: 2px; font-size: 14px; font-weight: 800; color: var(--neon-cyan); letter-spacing: 1px;">v2.1</span>
+            <span style="position: absolute; right: -30px; bottom: 2px; font-size: 14px; font-weight: 800; color: var(--neon-cyan); letter-spacing: 1px;">v2.2</span>
           </div>
           <p class="subtitle hide-mobile" style="margin-top: 0;">자신만의 캐릭터를 커스텀하고 끝없이 달려보세요!</p>
           
@@ -700,8 +700,9 @@
         },
         updateScore(val) { if(this.els.score) this.els.score.textContent = `SCORE: ${val}`; },
         updateProgress(level, percent) {
-            if(this.els.progText) this.els.progText.textContent = level >= 10 ? `MAX LV` : `LV ${level}`;
-            if(this.els.progFill) this.els.progFill.style.width = level >= 10 ? `100%` : `${percent}%`;
+            // MAX LV 제한 삭제: 무한 레벨 표시
+            if(this.els.progText) this.els.progText.textContent = `LV ${level}`;
+            if(this.els.progFill) this.els.progFill.style.width = `${percent}%`;
         },
         showCombo(combo) {
             if(this.els.comboDisplay) {
@@ -807,6 +808,7 @@
       const LevelGenerator = {
         generateChunk(cx, isFlipped, index, currentLevel) {
             const list = [];
+            // gapMulti는 최소 0.7을 보장하여 무한 레벨업에도 음수가 되지 않습니다.
             const gapMulti = Math.max(0.7, 1 - ((currentLevel - 1) * 0.035));
             const baseGap = 850 * gapMulti;
             const doubleJumpGap = 1050 * gapMulti;
@@ -1532,12 +1534,10 @@
                 canvasCtx.save();
                 canvasCtx.fillStyle = ft.color;
                 canvasCtx.globalAlpha = Math.max(0, ft.life);
-                // [수정] 폰트 크기를 24px에서 48px로 2배 확대하여 시인성 극대화
                 canvasCtx.font = '800 48px Outfit';
                 canvasCtx.textAlign = 'center';
                 canvasCtx.textBaseline = 'middle';
                 canvasCtx.shadowColor = ft.color;
-                // [수정] 글씨가 커진 만큼 네온 그림자 발광 효과도 상향 (15 -> 25)
                 canvasCtx.shadowBlur = 25;
                 canvasCtx.fillText(ft.text, ft.x - world.scrollX, ft.y);
                 canvasCtx.restore();
@@ -1923,10 +1923,12 @@
         }
       }
 
+      // 무한 레벨업을 위해 거리(scrollX) 비례로 레벨을 계산하도록 로직 변경
       function checkLevelProgress() {
-        const speedRatio = Math.max(0, Math.min(1, (world.speed - CONFIG.baseSpeed) / (CONFIG.maxSpeed - CONFIG.baseSpeed)));
-        const currentLevel = Math.floor(speedRatio * 9) + 1; 
-        const percentToNext = (speedRatio * 9 % 1) * 100;
+        // 매 4000 픽셀 이동할 때마다 1레벨업
+        const distancePerLevel = 4000;
+        const currentLevel = Math.floor(world.scrollX / distancePerLevel) + 1;
+        const percentToNext = ((world.scrollX % distancePerLevel) / distancePerLevel) * 100;
         
         UIService.updateProgress(currentLevel, percentToNext);
 
@@ -1974,8 +1976,8 @@
               UIService.updateScore(game.score);
           }
 
-          const speedRatio = (world.speed - CONFIG.baseSpeed) / (CONFIG.maxSpeed - CONFIG.baseSpeed);
-          const hue = 180 + (speedRatio * 165); 
+          // 레벨 진행도에 맞춰 테마 컬러 무한 순환 변경 (거리 기준)
+          const hue = (180 + (world.scrollX / 4000) * 30) % 360; 
           world.themeColor = `hsl(${hue}, 100%, 50%)`;
           world.gridColor = `hsla(${hue}, 100%, 50%, 0.15)`;
 
