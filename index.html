@@ -1086,8 +1086,8 @@
         playSound(freq, duration, type='sine', vol=0.05) {
             if (game.muted || !audioCtx) return;
             this.tryUnlock();
-            // 모바일 버퍼 밀림 방지용 미세한 룩어헤드(+0.015초) 추가
-            const now = audioCtx.currentTime + 0.015;
+            // 효과음 즉시 재생 (모바일 딜레이의 주원인이었던 0.015초 지연 제거)
+            const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = type;
@@ -1101,7 +1101,7 @@
         playWarpSound() {
             if (game.muted || !audioCtx) return;
             this.tryUnlock();
-            const now = audioCtx.currentTime + 0.015;
+            const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sine';
@@ -1118,7 +1118,7 @@
         playClickSound() {
             if (game.muted || !audioCtx) return;
             this.tryUnlock();
-            const now = audioCtx.currentTime + 0.015;
+            const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'square';
@@ -1135,7 +1135,7 @@
             if (game.muted || !audioCtx) return;
             this.tryUnlock();
             this.stopFlightSound();
-            const now = audioCtx.currentTime + 0.015;
+            const now = audioCtx.currentTime;
             
             this.flightOsc = audioCtx.createOscillator();
             this.flightOsc.type = 'triangle';
@@ -1153,11 +1153,11 @@
         updateFlightSound(isAscending) {
             if (!this.flightOsc || !audioCtx) return;
             const targetFreq = isAscending ? 750 : 300; 
-            this.flightOsc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime + 0.015, 0.15);
+            this.flightOsc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.1);
         },
         stopFlightSound() {
             if (this.flightOsc && this.flightGain && audioCtx) {
-                const now = audioCtx.currentTime + 0.015;
+                const now = audioCtx.currentTime;
                 try {
                     this.flightGain.gain.cancelScheduledValues(now);
                     this.flightGain.gain.setValueAtTime(this.flightGain.gain.value, now);
@@ -1282,11 +1282,13 @@
         },
         scheduler() {
             if (!this.isPlaying) return;
-            while (this.nextNoteTime < audioCtx.currentTime + 0.1) {
+            // BGM은 모바일 타이머 부정확성을 고려해 lookahead를 0.15초로 늘려 미리 예약합니다.
+            while (this.nextNoteTime < audioCtx.currentTime + 0.15) {
                 this.scheduleNote(this.current16thNote, this.nextNoteTime);
                 this.nextNote();
             }
-            this.timerID = setTimeout(() => this.scheduler(), 25.0);
+            // 브라우저 렌더링에 밀리지 않게 여유를 두고 호출
+            this.timerID = setTimeout(() => this.scheduler(), 30.0);
         }
       };
 
@@ -2391,6 +2393,7 @@
 
         // 모바일 터치 반응성 극대화 (pointerdown 보다 빠른 touchstart 우선 처리)
         window.addEventListener('touchstart', (e) => {
+            AudioSystem.tryUnlock(); // 가장 먼저 오디오 권한 획득 시도
             if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
             e.preventDefault(); window.focus(); handlePress(); 
         }, pOpts);
@@ -2401,6 +2404,7 @@
 
         // PC 마우스 환경
         window.addEventListener('pointerdown', (e) => {
+            AudioSystem.tryUnlock(); // 마우스 환경에서도 최우선으로 오디오 권한 획득
             if (e.pointerType === 'touch') return; // 모바일은 touchstart에서 이미 처리함
             if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
             e.preventDefault(); window.focus(); handlePress(); 
