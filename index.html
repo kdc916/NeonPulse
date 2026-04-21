@@ -1431,8 +1431,10 @@
             else { EffectSystem.createDust(player.x + player.w/2, footY, coreColor); AudioSystem.playSound(150, 0.1, 'square', 0.03); }
         },
         activateFlight() {
-            player.isFlying = true; player.flightTime = player.maxFlightTime; player.jumps = 0; player.gravityFlipped = false; 
-            player.vy = -CONFIG.jumpForce * 0.6; player.grounded = false; 
+            player.isFlying = true; player.flightTime = player.maxFlightTime; player.jumps = 0; 
+            // 중력 반전 상태 유지 (기존에 강제로 false로 바꾸던 버그 수정)
+            player.vy = player.gravityFlipped ? CONFIG.jumpForce * 0.6 : -CONFIG.jumpForce * 0.6; 
+            player.grounded = false; 
             AudioSystem.playSound(800, 0.3, 'sine', 0.05); EffectSystem.triggerShake(5, 0.2);
             AudioSystem.startFlightSound();
         },
@@ -1449,9 +1451,14 @@
                 }
                 
                 if (input.pressed) {
-                    player.vy -= CONFIG.flightForce * dt;
-                    player.vy = Math.max(player.vy, -CONFIG.jumpForce * 1.2); 
-                    if (Math.random() < 0.4) EffectSystem.createDust(player.x + player.w/2, player.y + player.h, '#ffea00');
+                    if (player.gravityFlipped) {
+                        player.vy += CONFIG.flightForce * dt;
+                        player.vy = Math.min(player.vy, CONFIG.jumpForce * 1.2); 
+                    } else {
+                        player.vy -= CONFIG.flightForce * dt;
+                        player.vy = Math.max(player.vy, -CONFIG.jumpForce * 1.2); 
+                    }
+                    if (Math.random() < 0.4) EffectSystem.createDust(player.x + player.w/2, player.gravityFlipped ? player.y : player.y + player.h, '#ffea00');
                 }
                 AudioSystem.updateFlightSound(input.pressed);
             } else if (player.isDashing) {
@@ -1493,8 +1500,13 @@
             player.coyote = Math.max(0, player.coyote - dt);
             
             if (player.isFlying) {
-                player.vy += CONFIG.gravity * 0.6 * dt;
-                player.vy = Math.min(player.vy, CONFIG.maxFallSpeed);
+                if (player.gravityFlipped) {
+                    player.vy -= CONFIG.gravity * 0.6 * dt;
+                    player.vy = Math.max(player.vy, -CONFIG.maxFallSpeed);
+                } else {
+                    player.vy += CONFIG.gravity * 0.6 * dt;
+                    player.vy = Math.min(player.vy, CONFIG.maxFallSpeed);
+                }
             } else {
                 player.vy += (player.gravityFlipped ? -CONFIG.gravity : CONFIG.gravity) * dt;
                 if (!player.gravityFlipped) player.vy = Math.min(player.vy, CONFIG.maxFallSpeed);
@@ -1522,9 +1534,9 @@
             let hit = { x: sx, y: ob.y, w: ob.w, h: ob.h };
             switch(ob.type) {
                 case OBSTACLE_TYPE.SPIKE:
-                    hit.x += ob.w * 0.25; hit.w *= 0.5; hit.y += ob.h * 0.4;  hit.h *= 0.6; break;
+                    hit.x += ob.w * 0.3; hit.w *= 0.4; hit.y += ob.h * 0.15; hit.h *= 0.85; break;
                 case OBSTACLE_TYPE.SPIKE_DOWN:
-                    hit.x += ob.w * 0.25; hit.w *= 0.5; hit.y += 0; hit.h *= 0.6; break;
+                    hit.x += ob.w * 0.3; hit.w *= 0.4; hit.y += 0; hit.h *= 0.85; break;
                 case OBSTACLE_TYPE.RHOMBUS:
                     hit.x += ob.w * 0.2; hit.w *= 0.6; hit.y += ob.h * 0.2; hit.h *= 0.6; break;
                 case OBSTACLE_TYPE.TRAPEZOID:
@@ -1562,6 +1574,7 @@
                     if (this.checkRectCollision(pRect, hitboxDash)) {
                         ob.used = true; player.isDashing = true; player.dashTime = 0.55; player.vy = 0; player.jumps = 1;
                         player.grounded = false; 
+                        player.isInvincible = true; player.invincibleTime = 0.55; // 대시 중 완전 무적 부여
                         EffectSystem.createExplosion(sx, ob.y, '#ff0055'); EffectSystem.triggerShake(10, 0.2); AudioSystem.playSound(400, 0.2, 'sawtooth', 0.05);
                     }
                 }
@@ -1586,12 +1599,12 @@
                 if ([OBSTACLE_TYPE.PLATFORM, OBSTACLE_TYPE.BLOCK, OBSTACLE_TYPE.TRAPEZOID].includes(ob.type)) {
                     if (!player.gravityFlipped) {
                         const prevBottom = player.y - player.vy * dt + player.h;
-                        if (player.vy >= 0 && player.x + player.w > sx - 10 && player.x < sx + ob.w + 10 && prevBottom <= ob.y + 30 && player.y + player.h >= ob.y) {
+                        if (player.vy >= 0 && player.x + player.w > sx - 4 && player.x < sx + ob.w + 4 && prevBottom <= ob.y + 15 && player.y + player.h >= ob.y) {
                             player.y = ob.y - player.h; player.vy = 0; player.grounded = true; player.coyote = CONFIG.coyoteTime; player.jumps = 0; continue; 
                         }
                     } else {
                         const prevTop = player.y - player.vy * dt;
-                        if (player.vy <= 0 && player.x + player.w > sx - 10 && player.x < sx + ob.w + 10 && prevTop >= ob.y + ob.h - 30 && player.y <= ob.y + ob.h) {
+                        if (player.vy <= 0 && player.x + player.w > sx - 4 && player.x < sx + ob.w + 4 && prevTop >= ob.y + ob.h - 15 && player.y <= ob.y + ob.h) {
                             player.y = ob.y + ob.h; player.vy = 0; player.grounded = true; player.coyote = CONFIG.coyoteTime; player.jumps = 0; continue; 
                         }
                     }
@@ -1610,7 +1623,7 @@
                 if (player.isFlying) fatalObstacles.push(OBSTACLE_TYPE.PLATFORM); 
                 if (fatalObstacles.includes(ob.type)) {
                     if (this.checkRectCollision(pRect, hitbox)) {
-                        if (player.isInvincible) continue;
+                        if (player.isInvincible || player.isDashing) continue; // 대시 및 무적 시 사망 판정 무시
                         ob.fatalHit = true; game.hitStop = 0.1; 
                         game.deathCause = ob.type.includes('spike') ? '가시밭' : ob.type === OBSTACLE_TYPE.RHOMBUS ? '마름모 함정' : '거대 구조물';
                         handleGameOver(); break;
@@ -2358,8 +2371,8 @@
       // ==========================================
       function handlePress() {
         input.pressed = true; input.jumpBuffer = 0.15; AudioSystem.tryUnlock();
-        if (game.state === GAME_STATE.SETUP) startGame();
-        else if ((game.state === GAME_STATE.DEAD || game.state === GAME_STATE.CLEAR) && game.timer <= -0.5) { 
+        // 메뉴에서는 버튼으로만 시작하도록 수정 (화면 터치로 시작 X)
+        if ((game.state === GAME_STATE.DEAD || game.state === GAME_STATE.CLEAR) && game.timer <= -0.5) { 
             resetRun(true); UIService.hideResultCard(); game.state = GAME_STATE.PLAYING; BGMSystem.start();
         }
       }
@@ -2391,14 +2404,19 @@
 
         const pOpts = { passive: false };
 
+        // UI 영역 터치 검사 (스크롤 및 클릭 허용)
+        const isUIInteraction = (e) => {
+            return e.target.closest('.card') || ['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName);
+        };
+
         // 모바일 터치 반응성 극대화 (pointerdown 보다 빠른 touchstart 우선 처리)
         window.addEventListener('touchstart', (e) => {
             AudioSystem.tryUnlock(); // 가장 먼저 오디오 권한 획득 시도
-            if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
+            if (isUIInteraction(e)) return; // UI 영역 터치 시 무시 (스크롤 방해 안 함)
             e.preventDefault(); window.focus(); handlePress(); 
         }, pOpts);
         window.addEventListener('touchend', (e) => {
-            if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
+            if (isUIInteraction(e)) return;
             e.preventDefault(); handleRelease(); 
         }, pOpts);
 
@@ -2406,12 +2424,12 @@
         window.addEventListener('pointerdown', (e) => {
             AudioSystem.tryUnlock(); // 마우스 환경에서도 최우선으로 오디오 권한 획득
             if (e.pointerType === 'touch') return; // 모바일은 touchstart에서 이미 처리함
-            if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
+            if (isUIInteraction(e)) return;
             e.preventDefault(); window.focus(); handlePress(); 
         }, pOpts);
         window.addEventListener('pointerup', (e) => {
             if (e.pointerType === 'touch') return;
-            if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
+            if (isUIInteraction(e)) return;
             e.preventDefault(); handleRelease(); 
         }, pOpts);
         window.addEventListener('pointercancel', handleRelease, pOpts);
