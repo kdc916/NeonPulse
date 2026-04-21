@@ -533,9 +533,9 @@
         <div id="setupCard" class="card">
           <div style="position: relative; display: inline-block; margin-bottom: 16px;">
             <h1 class="title">NEON PULSE</h1>
-            <span style="position: absolute; right: -30px; bottom: 2px; font-size: 14px; font-weight: 800; color: var(--neon-cyan); letter-spacing: 1px;">v2.2</span>
+            <span style="position: absolute; right: -30px; bottom: 2px; font-size: 14px; font-weight: 800; color: var(--neon-cyan); letter-spacing: 1px;">v2.3</span>
           </div>
-          <p class="subtitle hide-mobile" style="margin-top: 0;">자신만의 캐릭터를 커스텀하고 끝없이 달려보세요!</p>
+          <p class="subtitle hide-mobile" style="margin-top: 0;">자신만의 캐릭터를 커스텀하고 끝없이 달려보세요!<br><span style="color:var(--neon-gold); font-size: 12px;">🎵 Procedural Synthwave BGM 탑재</span></p>
           
           <div class="lobby-grid">
               <div class="input-group span-2">
@@ -700,7 +700,6 @@
         },
         updateScore(val) { if(this.els.score) this.els.score.textContent = `SCORE: ${val}`; },
         updateProgress(level, percent) {
-            // MAX LV 제한 삭제: 무한 레벨 표시
             if(this.els.progText) this.els.progText.textContent = `LV ${level}`;
             if(this.els.progFill) this.els.progFill.style.width = `${percent}%`;
         },
@@ -808,7 +807,6 @@
       const LevelGenerator = {
         generateChunk(cx, isFlipped, index, currentLevel) {
             const list = [];
-            // gapMulti는 최소 0.7을 보장하여 무한 레벨업에도 음수가 되지 않습니다.
             const gapMulti = Math.max(0.7, 1 - ((currentLevel - 1) * 0.035));
             const baseGap = 850 * gapMulti;
             const doubleJumpGap = 1050 * gapMulti;
@@ -948,6 +946,8 @@
       // 5. SYSTEMS (Lobby, Audio, Render, Effect, Physics)
       // ==========================================
       const AudioSystem = {
+        flightOsc: null,
+        flightGain: null,
         tryUnlock() {
             if (game.audioInit) return;
             try {
@@ -969,6 +969,203 @@
             gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
             osc.connect(gain); gain.connect(audioCtx.destination);
             osc.start(now); osc.stop(now + duration);
+        },
+        playWarpSound() {
+            if (game.muted || !audioCtx) return;
+            this.tryUnlock();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.exponentialRampToValueAtTime(1500, now + 0.3); // 슈웅 하고 피치가 올라가는 워프 소리
+            
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.1, now + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(now); osc.stop(now + 0.3);
+        },
+        playClickSound() {
+            if (game.muted || !audioCtx) return;
+            this.tryUnlock();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.exponentialRampToValueAtTime(1200, now + 0.05); // 짧고 경쾌한 시스템 틱 소리
+            
+            gain.gain.setValueAtTime(0.05, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(now); osc.stop(now + 0.05);
+        },
+        startFlightSound() {
+            if (game.muted || !audioCtx) return;
+            this.tryUnlock();
+            this.stopFlightSound();
+            const now = audioCtx.currentTime;
+            
+            this.flightOsc = audioCtx.createOscillator();
+            this.flightOsc.type = 'triangle'; // 전기차 모터/UFO 같은 부드럽고 맑은 톤
+            this.flightOsc.frequency.setValueAtTime(300, now);
+            
+            this.flightGain = audioCtx.createGain();
+            this.flightGain.gain.setValueAtTime(0, now);
+            this.flightGain.gain.linearRampToValueAtTime(0.06, now + 0.2);
+            
+            this.flightOsc.connect(this.flightGain);
+            this.flightGain.connect(audioCtx.destination);
+            
+            this.flightOsc.start(now);
+        },
+        updateFlightSound(isAscending) {
+            if (!this.flightOsc || !audioCtx) return;
+            const targetFreq = isAscending ? 750 : 300; // 올라갈 때 출력이 강해지며 모터 회전수가 오르는 느낌
+            this.flightOsc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.15);
+        },
+        stopFlightSound() {
+            if (this.flightOsc && this.flightGain && audioCtx) {
+                const now = audioCtx.currentTime;
+                try {
+                    this.flightGain.gain.cancelScheduledValues(now);
+                    this.flightGain.gain.setValueAtTime(this.flightGain.gain.value, now);
+                    this.flightGain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                    this.flightOsc.stop(now + 0.15);
+                } catch(e) {}
+                this.flightOsc = null;
+                this.flightGain = null;
+            }
+        }
+      };
+
+      // 실시간 절차적 신스웨이브 BGM 생성기
+      const BGMSystem = {
+        isPlaying: false, timerID: null, current16thNote: 0, nextNoteTime: 0.0, noiseBuffer: null, bgmGain: null,
+        init() {
+            if (!audioCtx || this.noiseBuffer) return;
+            const bufferSize = audioCtx.sampleRate * 0.5;
+            this.noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = this.noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            
+            this.bgmGain = audioCtx.createGain();
+            this.bgmGain.connect(audioCtx.destination);
+            this.bgmGain.gain.value = 0.2; // BGM 마스터 볼륨 (효과음에 묻히지 않게 조절)
+        },
+        start() {
+            if (this.isPlaying) return;
+            AudioSystem.tryUnlock();
+            this.init();
+            if (!audioCtx) return;
+            this.isPlaying = true;
+            this.current16thNote = 0;
+            this.nextNoteTime = audioCtx.currentTime + 0.1;
+            this.scheduler();
+        },
+        stop() {
+            this.isPlaying = false;
+            clearTimeout(this.timerID);
+        },
+        nextNote() {
+            // 속도에 비례해서 BPM이 증가 (기본 130 BPM -> 최대 188 BPM)
+            const currentBpm = 130 + Math.floor((world.speed - CONFIG.baseSpeed) / 12);
+            const secondsPerBeat = 60.0 / currentBpm;
+            this.nextNoteTime += 0.25 * secondsPerBeat; // 16분음표 간격
+            this.current16thNote++;
+            if (this.current16thNote === 16) this.current16thNote = 0;
+        },
+        playDrum(type, time) {
+            if (type === 'kick') {
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(this.bgmGain);
+                osc.frequency.setValueAtTime(150, time); osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
+                gain.gain.setValueAtTime(0.6, time); gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+                osc.start(time); osc.stop(time + 0.5);
+            } else if (type === 'snare') {
+                const noise = audioCtx.createBufferSource(); noise.buffer = this.noiseBuffer;
+                const filter = audioCtx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 2000;
+                const gain = audioCtx.createGain(); gain.gain.setValueAtTime(0.4, time); gain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+                noise.connect(filter); filter.connect(gain); gain.connect(this.bgmGain);
+                const osc = audioCtx.createOscillator(); osc.type = 'triangle'; const oscGain = audioCtx.createGain();
+                oscGain.gain.setValueAtTime(0.3, time); oscGain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
+                osc.frequency.setValueAtTime(250, time); osc.frequency.exponentialRampToValueAtTime(100, time + 0.1);
+                osc.connect(oscGain); oscGain.connect(this.bgmGain);
+                noise.start(time); osc.start(time); osc.stop(time + 0.2);
+            } else if (type === 'hihat') {
+                const noise = audioCtx.createBufferSource(); noise.buffer = this.noiseBuffer;
+                const filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 8000;
+                const gain = audioCtx.createGain(); gain.gain.setValueAtTime(0.1, time); gain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
+                noise.connect(filter); filter.connect(gain); gain.connect(this.bgmGain);
+                noise.start(time);
+            }
+        },
+        playSynth(type, time, note) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+            osc.connect(filter); filter.connect(gain); gain.connect(this.bgmGain);
+            osc.frequency.value = 440 * Math.pow(2, (note - 69) / 12);
+
+            if (type === 'bass') {
+                osc.type = 'sawtooth'; filter.type = 'lowpass'; filter.Q.value = 5;
+                filter.frequency.setValueAtTime(600, time); filter.frequency.exponentialRampToValueAtTime(100, time + 0.15);
+                gain.gain.setValueAtTime(0.25, time); gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
+                osc.start(time); osc.stop(time + 0.2);
+            } else if (type === 'arp') {
+                osc.type = 'square'; filter.type = 'bandpass'; filter.Q.value = 2;
+                filter.frequency.setValueAtTime(2000, time); filter.frequency.exponentialRampToValueAtTime(800, time + 0.1);
+                gain.gain.setValueAtTime(0.03, time); gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+                osc.start(time); osc.stop(time + 0.15);
+            } else if (type === 'pad') {
+                osc.type = 'sine'; filter.type = 'lowpass'; filter.frequency.value = 800;
+                gain.gain.setValueAtTime(0, time); gain.gain.linearRampToValueAtTime(0.1, time + 0.1); gain.gain.linearRampToValueAtTime(0, time + 0.5);
+                osc.start(time); osc.stop(time + 0.5);
+            }
+        },
+        scheduleNote(beatNumber, time) {
+            if (game.muted || game.state !== GAME_STATE.PLAYING) return;
+            
+            const currentBpm = 130 + Math.floor((world.speed - CONFIG.baseSpeed) / 12);
+
+            // 드럼 비트 스케줄링
+            if (beatNumber % 4 === 0) this.playDrum('kick', time);
+            if (beatNumber % 8 === 4) this.playDrum('snare', time);
+            if (beatNumber % 2 === 0) this.playDrum('hihat', time);
+
+            // 4마디(bar) 단위 베이스/코드 프로그레션
+            const bar = Math.floor((this.nextNoteTime / (60/currentBpm * 4))) % 4;
+            let transpose = 0;
+            if (bar === 1) transpose = -2;
+            if (bar === 2) transpose = -4;
+            if (bar === 3) transpose = -2;
+
+            // 베이스 신스 (16비트 패턴)
+            const bassPattern = [36, 36, 36, 48, 36, 36, 36, 46, 36, 36, 36, 48, 43, 43, 45, 45];
+            this.playSynth('bass', time, bassPattern[beatNumber] + transpose);
+
+            // 레벨 2 이상: 8비트 스타일 아르페지오 추가
+            if (game.currentLevel >= 2) {
+                const arpPattern = [60, 67, 72, 67, 60, 67, 72, 67, 60, 67, 72, 67, 60, 67, 72, 67];
+                this.playSynth('arp', time, arpPattern[beatNumber] + transpose);
+            }
+            
+            // 레벨 4 이상: 앰비언트 패드 화음 추가 (마디 첫 박자마다)
+            if (game.currentLevel >= 4 && beatNumber === 0) {
+                this.playSynth('pad', time, 60 + transpose);
+                this.playSynth('pad', time, 67 + transpose);
+            }
+        },
+        scheduler() {
+            if (!this.isPlaying) return;
+            while (this.nextNoteTime < audioCtx.currentTime + 0.1) {
+                this.scheduleNote(this.current16thNote, this.nextNoteTime);
+                this.nextNote();
+            }
+            this.timerID = setTimeout(() => this.scheduler(), 25.0);
         }
       };
 
@@ -1058,7 +1255,9 @@
             }
 
             world.pulseTime += dt;
-            const beatInterval = 60 / 130;
+            // BGM의 템포가 바뀌면 화면 UI가 박자에 맞게 맥박치도록 설정
+            const currentBpm = 130 + Math.floor((world.speed - CONFIG.baseSpeed) / 12);
+            const beatInterval = 60 / currentBpm;
             world.pulse = 1 + Math.max(0, 1 - ((world.pulseTime % beatInterval) / beatInterval) * 4) * 0.15; 
 
             for (let i = world.floatingTexts.length - 1; i >= 0; i--) {
@@ -1113,6 +1312,7 @@
             player.isFlying = true; player.flightTime = player.maxFlightTime; player.jumps = 0; player.gravityFlipped = false; 
             player.vy = -CONFIG.jumpForce * 0.6; player.grounded = false; 
             AudioSystem.playSound(800, 0.3, 'sine', 0.05); EffectSystem.triggerShake(5, 0.2);
+            AudioSystem.startFlightSound();
         },
         handleInput(dt) {
             const pRect = { x: player.x + 4, y: player.y + 4, w: player.w - 8, h: player.h - 8 };
@@ -1123,6 +1323,7 @@
                 
                 if (player.flightTime <= 0) { 
                     player.isFlying = false; 
+                    AudioSystem.stopFlightSound();
                 }
                 
                 if (input.pressed) {
@@ -1130,6 +1331,7 @@
                     player.vy = Math.max(player.vy, -CONFIG.jumpForce * 1.2); 
                     if (Math.random() < 0.4) EffectSystem.createDust(player.x + player.w/2, player.y + player.h, '#ffea00');
                 }
+                AudioSystem.updateFlightSound(input.pressed);
             } else if (player.isDashing) {
                 player.dashTime -= dt; player.vy = 0; 
                 if (Math.random() < 0.5) EffectSystem.createDust(player.x, player.y + player.h/2, '#ff0055');
@@ -1247,7 +1449,7 @@
                         ob.used = true; player.gravityFlipped = (ob.dir === 'up'); 
                         player.vy = player.gravityFlipped ? -CONFIG.jumpForce * 1.5 : CONFIG.jumpForce * 1.5; 
                         player.isInvincible = true; player.invincibleTime = 1.2;
-                        AudioSystem.playSound(700, 0.2, 'triangle', 0.05);
+                        AudioSystem.playWarpSound();
                         EffectSystem.createExplosion(sx + ob.w/2, ob.y + ob.h/2, ob.dir==='up' ? '#00ffff' : '#ff9d00'); EffectSystem.triggerShake(8, 0.15); 
                     }
                 }
@@ -1294,7 +1496,7 @@
                 }
             }
             if (player.grounded) {
-                if (player.isFlying) { player.isFlying = false; player.flightTime = 0; }
+                if (player.isFlying) { player.isFlying = false; player.flightTime = 0; AudioSystem.stopFlightSound(); }
                 if (player.isDashing) player.isDashing = false;
             }
         },
@@ -1875,12 +2077,15 @@
         UIService.hideResultCard();
         resetRun(false);
         game.state = GAME_STATE.PLAYING;
+        BGMSystem.start();
       }
 
       function resetRun(incrementAttempt = false) {
         const nextAttempts = incrementAttempt ? game.attempts + 1 : game.attempts;
         const preservedMuted = game.muted;
         const preservedAudio = game.audioInit;
+
+        AudioSystem.stopFlightSound();
 
         game = StateFactory.createGame(nextAttempts, preservedMuted, preservedAudio);
         player = StateFactory.createPlayer();
@@ -1902,6 +2107,9 @@
         game.state = GAME_STATE.DEAD;
         game.timer = CONFIG.deathDelay;
         game.flash = 1;
+        
+        BGMSystem.stop();
+        AudioSystem.stopFlightSound();
         UIService.hideCombo();
         UIService.showHint("R to Retry");
         
@@ -2008,7 +2216,7 @@
         input.pressed = true; input.jumpBuffer = 0.15; AudioSystem.tryUnlock();
         if (game.state === GAME_STATE.SETUP) startGame();
         else if ((game.state === GAME_STATE.DEAD || game.state === GAME_STATE.CLEAR) && game.timer <= -0.5) { 
-            resetRun(true); UIService.hideResultCard(); game.state = GAME_STATE.PLAYING; 
+            resetRun(true); UIService.hideResultCard(); game.state = GAME_STATE.PLAYING; BGMSystem.start();
         }
       }
 
@@ -2021,11 +2229,15 @@
 
             if ((e.code === 'Space' || e.code === 'ArrowUp') && !e.repeat) handlePress();
             if (e.code === 'KeyR' && (game.state === GAME_STATE.PLAYING || game.state === GAME_STATE.PAUSED || game.state === GAME_STATE.DEAD || game.state === GAME_STATE.CLEAR)) {
-                UIService.hideResultCard(); resetRun(true); game.state = GAME_STATE.PLAYING;
+                UIService.hideResultCard(); resetRun(true); game.state = GAME_STATE.PLAYING; BGMSystem.start();
             }
             if (e.code === 'Escape') {
-                if (game.state === GAME_STATE.PLAYING) game.state = GAME_STATE.PAUSED; 
-                else if (game.state === GAME_STATE.PAUSED) game.state = GAME_STATE.PLAYING;
+                if (game.state === GAME_STATE.PLAYING) { 
+                    game.state = GAME_STATE.PAUSED; BGMSystem.stop(); AudioSystem.stopFlightSound();
+                } else if (game.state === GAME_STATE.PAUSED) { 
+                    game.state = GAME_STATE.PLAYING; BGMSystem.start();
+                    if (player.isFlying) AudioSystem.startFlightSound();
+                }
             }
         }, { passive: false });
 
@@ -2044,22 +2256,30 @@
         }, pOpts);
         window.addEventListener('pointercancel', handleRelease, pOpts);
 
-        UIService.els.btnRandom.addEventListener('click', LobbySystem.randomize);
-        UIService.els.btnStart.addEventListener('click', () => { AudioSystem.tryUnlock(); startGame(); });
+        const playBtnSound = () => { AudioSystem.tryUnlock(); AudioSystem.playClickSound(); };
+
+        UIService.els.btnRandom.addEventListener('click', () => { playBtnSound(); LobbySystem.randomize(); });
+        UIService.els.btnStart.addEventListener('click', () => { playBtnSound(); AudioSystem.tryUnlock(); startGame(); });
         UIService.els.btnRetry.addEventListener('click', () => { 
             if (game.state === GAME_STATE.DEAD && game.timer > -0.5) return;
-            AudioSystem.tryUnlock(); UIService.hideResultCard(); resetRun(true); game.state = GAME_STATE.PLAYING; 
+            playBtnSound();
+            AudioSystem.tryUnlock(); UIService.hideResultCard(); resetRun(true); game.state = GAME_STATE.PLAYING; BGMSystem.start();
         });
         UIService.els.btnMenu.addEventListener('click', () => { 
             if (game.state === GAME_STATE.DEAD && game.timer > -0.5) return;
+            playBtnSound();
             resetRun(false); showSetup(); 
         });
         UIService.els.btnMute.addEventListener('click', () => {
+            playBtnSound();
             game.muted = !game.muted; UIService.els.btnMute.textContent = `🔊 SOUND: ${game.muted ? 'OFF' : 'ON'}`;
+            if (game.muted) AudioSystem.stopFlightSound();
+            else if (player.isFlying && game.state === GAME_STATE.PLAYING) AudioSystem.startFlightSound();
         });
         
-        UIService.els.aiNameBtn.addEventListener('click', LobbySystem.generateNickname);
+        UIService.els.aiNameBtn.addEventListener('click', () => { playBtnSound(); LobbySystem.generateNickname(); });
         UIService.els.aiCoachBtn.addEventListener('click', () => {
+            playBtnSound();
             const feedback = LobbySystem.getCoachFeedback();
             UIService.showAiCoachFeedback(feedback);
         });
