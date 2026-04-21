@@ -1070,17 +1070,24 @@
         flightOsc: null,
         flightGain: null,
         tryUnlock() {
-            if (game.audioInit) return;
             try {
-                audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                game.audioInit = true;
+                if (!audioCtx) {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    // 모바일 지연 방지: latencyHint를 interactive(저지연)로 강제 설정
+                    audioCtx = new AC({ latencyHint: 'interactive' });
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                } else {
+                    game.audioInit = true;
+                }
             } catch (e) {}
         },
         playSound(freq, duration, type='sine', vol=0.05) {
             if (game.muted || !audioCtx) return;
             this.tryUnlock();
-            const now = audioCtx.currentTime;
+            // 모바일 버퍼 밀림 방지용 미세한 룩어헤드(+0.015초) 추가
+            const now = audioCtx.currentTime + 0.015;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = type;
@@ -1094,7 +1101,7 @@
         playWarpSound() {
             if (game.muted || !audioCtx) return;
             this.tryUnlock();
-            const now = audioCtx.currentTime;
+            const now = audioCtx.currentTime + 0.015;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sine';
@@ -1111,7 +1118,7 @@
         playClickSound() {
             if (game.muted || !audioCtx) return;
             this.tryUnlock();
-            const now = audioCtx.currentTime;
+            const now = audioCtx.currentTime + 0.015;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'square';
@@ -1128,7 +1135,7 @@
             if (game.muted || !audioCtx) return;
             this.tryUnlock();
             this.stopFlightSound();
-            const now = audioCtx.currentTime;
+            const now = audioCtx.currentTime + 0.015;
             
             this.flightOsc = audioCtx.createOscillator();
             this.flightOsc.type = 'triangle';
@@ -1146,11 +1153,11 @@
         updateFlightSound(isAscending) {
             if (!this.flightOsc || !audioCtx) return;
             const targetFreq = isAscending ? 750 : 300; 
-            this.flightOsc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.15);
+            this.flightOsc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime + 0.015, 0.15);
         },
         stopFlightSound() {
             if (this.flightOsc && this.flightGain && audioCtx) {
-                const now = audioCtx.currentTime;
+                const now = audioCtx.currentTime + 0.015;
                 try {
                     this.flightGain.gain.cancelScheduledValues(now);
                     this.flightGain.gain.setValueAtTime(this.flightGain.gain.value, now);
@@ -2381,11 +2388,25 @@
         });
 
         const pOpts = { passive: false };
+
+        // 모바일 터치 반응성 극대화 (pointerdown 보다 빠른 touchstart 우선 처리)
+        window.addEventListener('touchstart', (e) => {
+            if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
+            e.preventDefault(); window.focus(); handlePress(); 
+        }, pOpts);
+        window.addEventListener('touchend', (e) => {
+            if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
+            e.preventDefault(); handleRelease(); 
+        }, pOpts);
+
+        // PC 마우스 환경
         window.addEventListener('pointerdown', (e) => {
+            if (e.pointerType === 'touch') return; // 모바일은 touchstart에서 이미 처리함
             if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
             e.preventDefault(); window.focus(); handlePress(); 
         }, pOpts);
         window.addEventListener('pointerup', (e) => {
+            if (e.pointerType === 'touch') return;
             if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
             e.preventDefault(); handleRelease(); 
         }, pOpts);
