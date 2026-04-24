@@ -539,7 +539,7 @@
         <div id="setupCard" class="card">
           <div style="position: relative; display: inline-block; margin-bottom: 16px;">
             <h1 class="title">NEON PULSE</h1>
-            <span style="position: absolute; right: -30px; bottom: 2px; font-size: 14px; font-weight: 800; color: var(--neon-cyan); letter-spacing: 1px;">v2.4</span>
+            <span style="position: absolute; right: -30px; bottom: 2px; font-size: 14px; font-weight: 800; color: var(--neon-cyan); letter-spacing: 1px;">v2.6</span>
           </div>
           <p class="subtitle hide-mobile" style="margin-top: 0;">자신만의 캐릭터를 커스텀하고 끝없이 달려보세요!<br><span style="color:var(--neon-gold); font-size: 12px;">🌍 Global Leaderboard 시스템 탑재</span></p>
           
@@ -809,7 +809,16 @@
                 this.els.resTitle.style.backgroundImage = 'linear-gradient(to right, #ff0055, #ff00ff)';
                 this.els.resTitle.style.filter = 'drop-shadow(0 0 8px rgba(255, 0, 255, 0.4))';
             }
-            if(this.els.resText) this.els.resText.innerHTML = `Player: <b>${nickname}</b><br>Score: ${score}`;
+            if(this.els.resText) {
+                this.els.resText.textContent = '';
+                const playerLine = document.createElement('div');
+                const safeName = sanitizeNickname(nickname);
+                playerLine.textContent = `Player: ${safeName}`;
+                const scoreLine = document.createElement('div');
+                scoreLine.textContent = `Score: ${Number(score || 0).toLocaleString()}`;
+                this.els.resText.appendChild(playerLine);
+                this.els.resText.appendChild(scoreLine);
+            }
             if(this.els.resRank) this.els.resRank.textContent = `Global Rank: #${rankNum} (Top ${topPct}%)`;
         },
         resetAiCoach() {
@@ -818,19 +827,33 @@
         },
         showAiCoachFeedback(feedback) {
             if(this.els.aiCoachBtn) this.els.aiCoachBtn.style.display = "none";
-            if(this.els.aiCoachText) this.els.aiCoachText.innerHTML = `<span style="color: var(--neon-cyan);">[시스템 코치]</span><br/>"${feedback}"`;
+            if(this.els.aiCoachText) {
+                this.els.aiCoachText.textContent = '';
+                const label = document.createElement('span');
+                label.style.color = 'var(--neon-cyan)';
+                label.textContent = '[시스템 코치]';
+                const line = document.createElement('div');
+                line.textContent = `\"${String(feedback || '')}\"`;
+                this.els.aiCoachText.appendChild(label);
+                this.els.aiCoachText.appendChild(line);
+            }
         },
         updateLeaderboardUI() {
             const lbList = document.getElementById('lbList');
             if (!lbList) return;
-            lbList.innerHTML = '';
+            lbList.textContent = '';
 
             if (globalLeaderboard.length === 0) {
-                lbList.innerHTML = '<li style="text-align:center; color:#888; margin-top:10px;">아직 등록된 기록이 없습니다.</li>';
+                const empty = document.createElement('li');
+                empty.style.textAlign = 'center';
+                empty.style.color = '#888';
+                empty.style.marginTop = '10px';
+                empty.textContent = '아직 등록된 기록이 없습니다.';
+                lbList.appendChild(empty);
                 return;
             }
 
-            // 상위 50명만 표시
+            // 상위 50명만 표시. innerHTML을 쓰지 않아 닉네임으로 UI가 깨지는 문제를 막습니다.
             globalLeaderboard.slice(0, 50).forEach((entry, idx) => {
                 const li = document.createElement('li');
                 li.style.display = 'flex';
@@ -852,14 +875,19 @@
                     li.style.border = '1px solid rgba(0, 255, 255, 0.3)';
                 }
 
-                li.innerHTML = `
-                    <span style="color: ${rankColor}; font-weight: ${isMe ? '800' : '600'};">
-                        #${idx + 1} ${entry.nickname} ${isMe ? '<span style="font-size:10px; color:var(--neon-cyan);">(나)</span>' : ''}
-                    </span>
-                    <span style="color: var(--neon-cyan); font-family: 'Outfit'; font-weight: 800;">
-                        ${entry.score.toLocaleString()}
-                    </span>
-                `;
+                const rankSpan = document.createElement('span');
+                rankSpan.style.color = rankColor;
+                rankSpan.style.fontWeight = isMe ? '800' : '600';
+                rankSpan.textContent = `#${idx + 1} ${sanitizeNickname(entry.nickname)}${isMe ? ' (나)' : ''}`;
+
+                const scoreSpan = document.createElement('span');
+                scoreSpan.style.color = 'var(--neon-cyan)';
+                scoreSpan.style.fontFamily = 'Outfit';
+                scoreSpan.style.fontWeight = '800';
+                scoreSpan.textContent = Number(entry.score || 0).toLocaleString();
+
+                li.appendChild(rankSpan);
+                li.appendChild(scoreSpan);
                 lbList.appendChild(li);
             });
         }
@@ -868,7 +896,7 @@
       const StateFactory = {
         createGame: (prevAttempts = 0, prevMuted = false, prevAudioInit = false) => ({
             state: GAME_STATE.SETUP, 
-            attempts: prevAttempts, score: 0, stars: 0, bestScore: StorageService.getBestScore(),
+            attempts: prevAttempts, score: 0, stars: 0, bonusScore: 0, runTime: 0, bestScore: StorageService.getBestScore(),
             currentLevel: 1, levelUpTimer: 0,
             starCombo: 0, comboTimer: 0, comboUITimer: 0,
             hitStop: 0, deathCause: '',
@@ -900,6 +928,7 @@
           trap: (x, flip=false, w=80, h=80) => ({ type: OBSTACLE_TYPE.TRAPEZOID, narrow: flip ? 'bottom' : 'top', x, y: flip ? CONFIG.ceilY : CONFIG.groundY - h, w, h, color: '#ff9d00', fatalHit: false }),
           star: (x, y) => ({ type: OBSTACLE_TYPE.STAR, x, y, w: 30, h: 30, collected: false }),
           portalGrav: (x, y, dir) => ({ type: OBSTACLE_TYPE.PORTAL_GRAV, x, y, w: 60, h: 100, dir, used: false }),
+          orb: (x, y) => ({ type: OBSTACLE_TYPE.ORB, x, y, r: 24, w: 48, h: 48, used: false, color: '#ffea00' }),
           orbDash: (x, y) => ({ type: OBSTACLE_TYPE.ORB_DASH, x, y, r: 24, w: 48, h: 48, used: false, color: '#ff0055' }),
           glassWall: (x, flip=false, h=150) => ({ type: OBSTACLE_TYPE.GLASS, x, y: flip ? CONFIG.ceilY : CONFIG.groundY - h, w: 40, h, destroyed: false, color: '#ff0055', fatalHit: false })
       };
@@ -915,7 +944,28 @@
       let world = StateFactory.createWorld();
       
       const input = { pressed: false, jumpBuffer: 0 };
+      const DEBUG = { hitbox: false };
       const playerDesign = { nickname: "PLAYER", colorName: 'Orange', base: '#fff', shape: SHAPE.DIAMOND, face: 'Wink' };
+
+      function sanitizeNickname(name) {
+        return String(name || 'PLAYER')
+          .replace(/[<>&\"'`]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .substring(0, 12) || 'PLAYER';
+      }
+
+      function isValidScoreForSubmit(score) {
+        const safeScore = Number(score);
+        const playTime = Math.max(0, Number(game.runTime || 0));
+        const stars = Math.max(0, Number(game.stars || 0));
+        const bonus = Math.max(0, Number(game.bonusScore || 0));
+        const distanceScore = Math.floor(Math.max(0, world.scrollX || 0) / 10);
+        const expectedScore = distanceScore + stars * 1000 + bonus;
+        const tolerance = 5000;
+        const maxByTime = Math.floor(playTime * 260) + stars * 1800 + bonus + tolerance;
+        return Number.isFinite(safeScore) && safeScore >= 0 && safeScore <= Math.max(expectedScore + tolerance, maxByTime);
+      }
 
       let lastTime = 0;
       let audioCtx = null;
@@ -998,7 +1048,9 @@
                 list.push(ObstacleFactory.star(nextX + 30, mF ? CONFIG.ceilY + 60 : CONFIG.groundY - 90)); 
                 nextX += baseGap;
             } else if (rand < 0.30) {
-                list.push(ObstacleFactory.rhombus(nextX, mF, 60 + Math.random()*20)); nextX += baseGap;
+                list.push(ObstacleFactory.rhombus(nextX, mF, 60 + Math.random()*20));
+                list.push(ObstacleFactory.orb(nextX + 240 * gapMulti, mF ? CONFIG.ceilY + 110 : CONFIG.groundY - 150));
+                nextX += baseGap;
             } else if (rand < 0.45) {
                 list.push(ObstacleFactory.orbDash(nextX, mF ? CONFIG.ceilY + 40 : CONFIG.groundY - 140));
                 list.push(ObstacleFactory.glassWall(nextX + 300 * gapMulti, mF, 250));
@@ -1017,6 +1069,7 @@
                 nextX += doubleJumpGap;
             } else if (rand < 0.85) {
                 list.push(ObstacleFactory.trap(nextX, mF, 80, 80)); 
+                list.push(ObstacleFactory.orb(nextX + 120 * gapMulti, mF ? CONFIG.ceilY + 120 : CONFIG.groundY - 170));
                 list.push(ObstacleFactory.plat(nextX + 150, mF ? CONFIG.ceilY + 40 : CONFIG.groundY - 140, 180)); 
                 list.push(ObstacleFactory.spike(nextX + 400 * gapMulti, mF)); 
                 nextX += doubleJumpGap;
@@ -1431,10 +1484,8 @@
             else { EffectSystem.createDust(player.x + player.w/2, footY, coreColor); AudioSystem.playSound(150, 0.1, 'square', 0.03); }
         },
         activateFlight() {
-            player.isFlying = true; player.flightTime = player.maxFlightTime; player.jumps = 0; 
-            // 중력 반전 상태 유지 (기존에 강제로 false로 바꾸던 버그 수정)
-            player.vy = player.gravityFlipped ? CONFIG.jumpForce * 0.6 : -CONFIG.jumpForce * 0.6; 
-            player.grounded = false; 
+            player.isFlying = true; player.flightTime = player.maxFlightTime; player.jumps = 0; player.gravityFlipped = false; 
+            player.vy = -CONFIG.jumpForce * 0.6; player.grounded = false; 
             AudioSystem.playSound(800, 0.3, 'sine', 0.05); EffectSystem.triggerShake(5, 0.2);
             AudioSystem.startFlightSound();
         },
@@ -1451,14 +1502,9 @@
                 }
                 
                 if (input.pressed) {
-                    if (player.gravityFlipped) {
-                        player.vy += CONFIG.flightForce * dt;
-                        player.vy = Math.min(player.vy, CONFIG.jumpForce * 1.2); 
-                    } else {
-                        player.vy -= CONFIG.flightForce * dt;
-                        player.vy = Math.max(player.vy, -CONFIG.jumpForce * 1.2); 
-                    }
-                    if (Math.random() < 0.4) EffectSystem.createDust(player.x + player.w/2, player.gravityFlipped ? player.y : player.y + player.h, '#ffea00');
+                    player.vy -= CONFIG.flightForce * dt;
+                    player.vy = Math.max(player.vy, -CONFIG.jumpForce * 1.2); 
+                    if (Math.random() < 0.4) EffectSystem.createDust(player.x + player.w/2, player.y + player.h, '#ffea00');
                 }
                 AudioSystem.updateFlightSound(input.pressed);
             } else if (player.isDashing) {
@@ -1500,13 +1546,8 @@
             player.coyote = Math.max(0, player.coyote - dt);
             
             if (player.isFlying) {
-                if (player.gravityFlipped) {
-                    player.vy -= CONFIG.gravity * 0.6 * dt;
-                    player.vy = Math.max(player.vy, -CONFIG.maxFallSpeed);
-                } else {
-                    player.vy += CONFIG.gravity * 0.6 * dt;
-                    player.vy = Math.min(player.vy, CONFIG.maxFallSpeed);
-                }
+                player.vy += CONFIG.gravity * 0.6 * dt;
+                player.vy = Math.min(player.vy, CONFIG.maxFallSpeed);
             } else {
                 player.vy += (player.gravityFlipped ? -CONFIG.gravity : CONFIG.gravity) * dt;
                 if (!player.gravityFlipped) player.vy = Math.min(player.vy, CONFIG.maxFallSpeed);
@@ -1534,9 +1575,9 @@
             let hit = { x: sx, y: ob.y, w: ob.w, h: ob.h };
             switch(ob.type) {
                 case OBSTACLE_TYPE.SPIKE:
-                    hit.x += ob.w * 0.3; hit.w *= 0.4; hit.y += ob.h * 0.15; hit.h *= 0.85; break;
+                    hit.x += ob.w * 0.25; hit.w *= 0.5; hit.y += ob.h * 0.4;  hit.h *= 0.6; break;
                 case OBSTACLE_TYPE.SPIKE_DOWN:
-                    hit.x += ob.w * 0.3; hit.w *= 0.4; hit.y += 0; hit.h *= 0.85; break;
+                    hit.x += ob.w * 0.25; hit.w *= 0.5; hit.y += 0; hit.h *= 0.6; break;
                 case OBSTACLE_TYPE.RHOMBUS:
                     hit.x += ob.w * 0.2; hit.w *= 0.6; hit.y += ob.h * 0.2; hit.h *= 0.6; break;
                 case OBSTACLE_TYPE.TRAPEZOID:
@@ -1553,86 +1594,173 @@
         resolveCollisions(dt) {
             const pRect = { x: player.x + 4, y: player.y + 4, w: player.w - 8, h: player.h - 8 };
 
-            for (const ob of world.obstacles) {
-                const sx = ob.x - world.scrollX;
-                if (sx + (ob.w||ob.r*2) < -100 || sx > CONFIG.width + 100) continue;
-                const hitbox = this.getHitbox(ob, sx);
+            // 충돌 판정은 반드시 '아이템/상태 변경 → 착지 → 파괴 가능 오브젝트 → 사망 판정' 순서로 처리합니다.
+            // 이렇게 나누면 같은 프레임에 아이템을 먹고 바로 죽는 억까 판정을 크게 줄일 수 있습니다.
+            this.resolveCollectibles(pRect);
+            this.resolvePlatforms(pRect, dt);
+            this.resolveBreakables(pRect);
+            this.resolveFatalObstacles(pRect);
 
-                if (ob.type === OBSTACLE_TYPE.STAR && !ob.collected) {
-                    if (this.checkRectCollision(pRect, hitbox)) {
-                        ob.collected = true; game.stars++;
-                        AudioSystem.playSound(900, 0.1, 'sine', 0.1);
-                        EffectSystem.createRing(sx + ob.w/2, ob.y + ob.h/2, '#ffea00');
-                        game.starCombo++; game.comboTimer = 2.0; game.comboUITimer = 0.8; 
-                        UIService.showCombo(game.starCombo);
-                        const bonus = 350 + (game.starCombo * 50); game.score += bonus;
-                        EffectSystem.spawnFloatingText(`+${bonus}`, player.x + player.w/2 + world.scrollX, player.y - 30, '#ffea00');
-                    }
-                }
-                if (ob.type === OBSTACLE_TYPE.ORB_DASH && !ob.used) {
-                    const hitboxDash = { x: sx - ob.r - 20, y: ob.y - ob.r - 20, w: ob.r*2 + 40, h: ob.r*2 + 40 };
-                    if (this.checkRectCollision(pRect, hitboxDash)) {
-                        ob.used = true; player.isDashing = true; player.dashTime = 0.55; player.vy = 0; player.jumps = 1;
-                        player.grounded = false; 
-                        player.isInvincible = true; player.invincibleTime = 0.55; // 대시 중 완전 무적 부여
-                        EffectSystem.createExplosion(sx, ob.y, '#ff0055'); EffectSystem.triggerShake(10, 0.2); AudioSystem.playSound(400, 0.2, 'sawtooth', 0.05);
-                    }
-                }
-                if (ob.type === OBSTACLE_TYPE.PORTAL_GRAV && !ob.used) {
-                    const hitboxGrav = { x: sx, y: ob.y, w: ob.w, h: ob.h };
-                    if (this.checkRectCollision(pRect, hitboxGrav)) {
-                        ob.used = true; player.gravityFlipped = (ob.dir === 'up'); 
-                        player.vy = player.gravityFlipped ? -CONFIG.jumpForce * 1.5 : CONFIG.jumpForce * 1.5; 
-                        player.isInvincible = true; player.invincibleTime = 1.2;
-                        AudioSystem.playWarpSound();
-                        EffectSystem.createExplosion(sx + ob.w/2, ob.y + ob.h/2, ob.dir==='up' ? '#00ffff' : '#ff9d00'); EffectSystem.triggerShake(8, 0.15); 
-                    }
-                }
-                if (ob.type === OBSTACLE_TYPE.ITEM_FLIGHT && !ob.used) {
-                    const hitboxFlight = { x: sx - 10, y: ob.y - 10, w: ob.w + 20, h: ob.h + 20 };
-                    if (this.checkRectCollision(pRect, hitboxFlight)) {
-                        ob.used = true; this.activateFlight(); 
-                        player.isInvincible = true; player.invincibleTime = 1.2;
-                        EffectSystem.createExplosion(sx + ob.w/2, ob.y + ob.h/2, '#ffea00');
-                    }
-                }
-                if ([OBSTACLE_TYPE.PLATFORM, OBSTACLE_TYPE.BLOCK, OBSTACLE_TYPE.TRAPEZOID].includes(ob.type)) {
-                    if (!player.gravityFlipped) {
-                        const prevBottom = player.y - player.vy * dt + player.h;
-                        if (player.vy >= 0 && player.x + player.w > sx - 4 && player.x < sx + ob.w + 4 && prevBottom <= ob.y + 15 && player.y + player.h >= ob.y) {
-                            player.y = ob.y - player.h; player.vy = 0; player.grounded = true; player.coyote = CONFIG.coyoteTime; player.jumps = 0; continue; 
-                        }
-                    } else {
-                        const prevTop = player.y - player.vy * dt;
-                        if (player.vy <= 0 && player.x + player.w > sx - 4 && player.x < sx + ob.w + 4 && prevTop >= ob.y + ob.h - 15 && player.y <= ob.y + ob.h) {
-                            player.y = ob.y + ob.h; player.vy = 0; player.grounded = true; player.coyote = CONFIG.coyoteTime; player.jumps = 0; continue; 
-                        }
-                    }
-                }
-                if (ob.type === OBSTACLE_TYPE.GLASS && !ob.destroyed) {
-                    if (this.checkRectCollision(pRect, hitbox)) {
-                        if (player.isDashing || player.isInvincible) {
-                            ob.destroyed = true; EffectSystem.createGlassShatter(sx, ob.y); AudioSystem.playSound(200, 0.15, 'square', 0.1); EffectSystem.triggerShake(8, 0.1); 
-                            game.score += 500; EffectSystem.spawnFloatingText('+500 BREAK!', player.x + player.w/2 + world.scrollX, player.y - 30, '#00ffff'); continue;
-                        } else {
-                            ob.fatalHit = true; game.hitStop = 0.1; game.deathCause = '유리 장벽'; handleGameOver(); break;
-                        }
-                    }
-                }
-                const fatalObstacles = [OBSTACLE_TYPE.SPIKE, OBSTACLE_TYPE.SPIKE_DOWN, OBSTACLE_TYPE.BLOCK, OBSTACLE_TYPE.TRAPEZOID, OBSTACLE_TYPE.RHOMBUS];
-                if (player.isFlying) fatalObstacles.push(OBSTACLE_TYPE.PLATFORM); 
-                if (fatalObstacles.includes(ob.type)) {
-                    if (this.checkRectCollision(pRect, hitbox)) {
-                        if (player.isInvincible || player.isDashing) continue; // 대시 및 무적 시 사망 판정 무시
-                        ob.fatalHit = true; game.hitStop = 0.1; 
-                        game.deathCause = ob.type.includes('spike') ? '가시밭' : ob.type === OBSTACLE_TYPE.RHOMBUS ? '마름모 함정' : '거대 구조물';
-                        handleGameOver(); break;
-                    }
-                }
-            }
             if (player.grounded) {
                 if (player.isFlying) { player.isFlying = false; player.flightTime = 0; AudioSystem.stopFlightSound(); }
                 if (player.isDashing) player.isDashing = false;
+            }
+        },
+        isObstacleNearScreen(ob, margin = 100) {
+            const sx = ob.x - world.scrollX;
+            const w = ob.w || (ob.r ? ob.r * 2 : 40);
+            return !(sx + w < -margin || sx > CONFIG.width + margin);
+        },
+        getCircleItemHitbox(ob, padding = 20) {
+            const sx = ob.x - world.scrollX;
+            return { x: sx - ob.r - padding, y: ob.y - ob.r - padding, w: ob.r * 2 + padding * 2, h: ob.r * 2 + padding * 2 };
+        },
+        resolveCollectibles(pRect) {
+            for (const ob of world.obstacles) {
+                if (!this.isObstacleNearScreen(ob, 100)) continue;
+                const sx = ob.x - world.scrollX;
+
+                if (ob.type === OBSTACLE_TYPE.STAR && !ob.collected) {
+                    const hitbox = this.getHitbox(ob, sx);
+                    if (this.checkRectCollision(pRect, hitbox)) {
+                        ob.collected = true;
+                        game.stars++;
+                        AudioSystem.playSound(900, 0.1, 'sine', 0.1);
+                        EffectSystem.createRing(sx + ob.w / 2, ob.y + ob.h / 2, '#ffea00');
+                        game.starCombo++;
+                        game.comboTimer = 2.0;
+                        game.comboUITimer = 0.8;
+                        UIService.showCombo(game.starCombo);
+                        const bonus = 350 + (game.starCombo * 50);
+                        game.bonusScore += bonus;
+                        EffectSystem.spawnFloatingText(`+${bonus}`, player.x + player.w / 2 + world.scrollX, player.y - 30, '#ffea00');
+                    }
+                    continue;
+                }
+
+                if (ob.type === OBSTACLE_TYPE.ORB_DASH && !ob.used) {
+                    const hitboxDash = this.getCircleItemHitbox(ob, 20);
+                    if (this.checkRectCollision(pRect, hitboxDash)) {
+                        ob.used = true;
+                        player.isDashing = true;
+                        player.dashTime = 0.55;
+                        player.vy = 0;
+                        player.jumps = 1;
+                        player.grounded = false;
+                        // 대시 시작 프레임의 억까 사망 방지용 짧은 무적
+                        player.isInvincible = true;
+                        player.invincibleTime = Math.max(player.invincibleTime, 0.18);
+                        EffectSystem.createExplosion(sx, ob.y, '#ff0055');
+                        EffectSystem.triggerShake(10, 0.2);
+                        AudioSystem.playSound(400, 0.2, 'sawtooth', 0.05);
+                    }
+                    continue;
+                }
+
+                if (ob.type === OBSTACLE_TYPE.PORTAL_GRAV && !ob.used) {
+                    const hitboxGrav = { x: sx, y: ob.y, w: ob.w, h: ob.h };
+                    if (this.checkRectCollision(pRect, hitboxGrav)) {
+                        ob.used = true;
+                        player.gravityFlipped = (ob.dir === 'up');
+                        // 기존 1.5배는 너무 강해서 패턴 안정성이 떨어져 1.15배로 완화
+                        player.vy = player.gravityFlipped ? -CONFIG.jumpForce * 1.15 : CONFIG.jumpForce * 1.15;
+                        player.isInvincible = true;
+                        player.invincibleTime = 1.2;
+                        AudioSystem.playWarpSound();
+                        EffectSystem.createExplosion(sx + ob.w / 2, ob.y + ob.h / 2, ob.dir === 'up' ? '#00ffff' : '#ff9d00');
+                        EffectSystem.triggerShake(8, 0.15);
+                    }
+                    continue;
+                }
+
+                if (ob.type === OBSTACLE_TYPE.ITEM_FLIGHT && !ob.used) {
+                    const hitboxFlight = { x: sx - 10, y: ob.y - 10, w: ob.w + 20, h: ob.h + 20 };
+                    if (this.checkRectCollision(pRect, hitboxFlight)) {
+                        ob.used = true;
+                        this.activateFlight();
+                        player.isInvincible = true;
+                        player.invincibleTime = 1.2;
+                        EffectSystem.createExplosion(sx + ob.w / 2, ob.y + ob.h / 2, '#ffea00');
+                    }
+                    continue;
+                }
+            }
+        },
+        resolvePlatforms(pRect, dt) {
+            const LANDING_TOLERANCE = 18;
+            for (const ob of world.obstacles) {
+                if (![OBSTACLE_TYPE.PLATFORM, OBSTACLE_TYPE.BLOCK, OBSTACLE_TYPE.TRAPEZOID].includes(ob.type)) continue;
+                if (!this.isObstacleNearScreen(ob, 100)) continue;
+
+                const sx = ob.x - world.scrollX;
+                if (!player.gravityFlipped) {
+                    const prevBottom = player.y - player.vy * dt + player.h;
+                    const hasHorizontalOverlap = player.x + player.w > sx - 10 && player.x < sx + ob.w + 10;
+                    const isLandingFromAbove = player.vy >= 0 && prevBottom <= ob.y + LANDING_TOLERANCE && player.y + player.h >= ob.y;
+                    if (hasHorizontalOverlap && isLandingFromAbove) {
+                        player.y = ob.y - player.h;
+                        player.vy = 0;
+                        player.grounded = true;
+                        player.coyote = CONFIG.coyoteTime;
+                        player.jumps = 0;
+                    }
+                } else {
+                    const prevTop = player.y - player.vy * dt;
+                    const hasHorizontalOverlap = player.x + player.w > sx - 10 && player.x < sx + ob.w + 10;
+                    const isLandingFromBelow = player.vy <= 0 && prevTop >= ob.y + ob.h - LANDING_TOLERANCE && player.y <= ob.y + ob.h;
+                    if (hasHorizontalOverlap && isLandingFromBelow) {
+                        player.y = ob.y + ob.h;
+                        player.vy = 0;
+                        player.grounded = true;
+                        player.coyote = CONFIG.coyoteTime;
+                        player.jumps = 0;
+                    }
+                }
+            }
+        },
+        resolveBreakables(pRect) {
+            for (const ob of world.obstacles) {
+                if (ob.type !== OBSTACLE_TYPE.GLASS || ob.destroyed) continue;
+                if (!this.isObstacleNearScreen(ob, 100)) continue;
+
+                const sx = ob.x - world.scrollX;
+                const hitbox = this.getHitbox(ob, sx);
+                if (!this.checkRectCollision(pRect, hitbox)) continue;
+
+                if (player.isDashing || player.isInvincible) {
+                    ob.destroyed = true;
+                    EffectSystem.createGlassShatter(sx, ob.y);
+                    AudioSystem.playSound(200, 0.15, 'square', 0.1);
+                    EffectSystem.triggerShake(8, 0.1);
+                    game.bonusScore += 500;
+                    EffectSystem.spawnFloatingText('+500 BREAK!', player.x + player.w / 2 + world.scrollX, player.y - 30, '#00ffff');
+                } else {
+                    ob.fatalHit = true;
+                    game.hitStop = 0.1;
+                    game.deathCause = '유리 장벽';
+                    handleGameOver();
+                    return;
+                }
+            }
+        },
+        resolveFatalObstacles(pRect) {
+            const fatalObstacles = [OBSTACLE_TYPE.SPIKE, OBSTACLE_TYPE.SPIKE_DOWN, OBSTACLE_TYPE.BLOCK, OBSTACLE_TYPE.TRAPEZOID, OBSTACLE_TYPE.RHOMBUS];
+            if (player.isFlying) fatalObstacles.push(OBSTACLE_TYPE.PLATFORM);
+
+            for (const ob of world.obstacles) {
+                if (!fatalObstacles.includes(ob.type)) continue;
+                if (!this.isObstacleNearScreen(ob, 100)) continue;
+
+                const sx = ob.x - world.scrollX;
+                const hitbox = this.getHitbox(ob, sx);
+                if (!this.checkRectCollision(pRect, hitbox)) continue;
+
+                if (player.isInvincible) continue;
+                ob.fatalHit = true;
+                game.hitStop = 0.1;
+                game.deathCause = ob.type.includes('spike') ? '가시밭' : ob.type === OBSTACLE_TYPE.RHOMBUS ? '마름모 함정' : '거대 구조물';
+                handleGameOver();
+                return;
             }
         },
         updateTrail(dt) {
@@ -2155,6 +2283,45 @@
             canvasCtx.fillRect(0, 0, CONFIG.width, CONFIG.height);
             canvasCtx.globalAlpha = 1;
         },
+        drawHitboxes() {
+            const pRect = { x: player.x + 4, y: player.y + 4, w: player.w - 8, h: player.h - 8 };
+            canvasCtx.save();
+            canvasCtx.lineWidth = 2;
+            canvasCtx.setLineDash([6, 4]);
+
+            canvasCtx.strokeStyle = 'rgba(57, 255, 20, 0.95)';
+            canvasCtx.strokeRect(pRect.x, pRect.y, pRect.w, pRect.h);
+
+            for (const ob of world.obstacles) {
+                if (!PhysicsSystem.isObstacleNearScreen(ob, 80)) continue;
+                const sx = ob.x - world.scrollX;
+                let hitbox;
+
+                if (ob.type === OBSTACLE_TYPE.ORB || ob.type === OBSTACLE_TYPE.ORB_DASH) {
+                    hitbox = PhysicsSystem.getCircleItemHitbox(ob, 20);
+                } else if (ob.type === OBSTACLE_TYPE.PORTAL_GRAV) {
+                    hitbox = { x: sx, y: ob.y, w: ob.w, h: ob.h };
+                } else if (ob.type === OBSTACLE_TYPE.ITEM_FLIGHT) {
+                    hitbox = { x: sx - 10, y: ob.y - 10, w: ob.w + 20, h: ob.h + 20 };
+                } else {
+                    hitbox = PhysicsSystem.getHitbox(ob, sx);
+                }
+
+                if (!hitbox) continue;
+                canvasCtx.strokeStyle = [OBSTACLE_TYPE.STAR, OBSTACLE_TYPE.ORB, OBSTACLE_TYPE.ORB_DASH, OBSTACLE_TYPE.ITEM_FLIGHT, OBSTACLE_TYPE.PORTAL_GRAV].includes(ob.type)
+                    ? 'rgba(255, 234, 0, 0.95)'
+                    : 'rgba(255, 0, 85, 0.95)';
+                canvasCtx.strokeRect(hitbox.x, hitbox.y, hitbox.w, hitbox.h);
+            }
+
+            canvasCtx.setLineDash([]);
+            canvasCtx.font = '700 14px Outfit';
+            canvasCtx.textAlign = 'left';
+            canvasCtx.textBaseline = 'top';
+            canvasCtx.fillStyle = 'rgba(57, 255, 20, 0.95)';
+            canvasCtx.fillText('DEBUG HITBOX: ON (H)', 18, 18);
+            canvasCtx.restore();
+        },
         renderMain() {
             canvasCtx.save();
             if (game.shakeTime > 0) {
@@ -2169,6 +2336,7 @@
             this.drawParticles(); 
             this.drawPlayer(); 
             this.drawFloatingTexts();
+            if (DEBUG.hitbox) this.drawHitboxes();
             
             if (game.levelUpTimer > 0) {
                 canvasCtx.fillStyle = `rgba(0, 255, 255, ${Math.min(1, game.levelUpTimer)})`;
@@ -2199,11 +2367,12 @@
         UIService.hideResultCard();
         UIService.showSetupCard();
         UIService.hideCombo();
-        UIService.showHint("Tap / Space to Jump");
+        UIService.showHint("Start Game 버튼으로 시작");
       }
 
       function startGame() {
-        playerDesign.nickname = UIService.els.nicknameInput.value.trim() || "PLAYER";
+        playerDesign.nickname = sanitizeNickname(UIService.els.nicknameInput.value);
+        UIService.els.nicknameInput.value = playerDesign.nickname;
         playerDesign.colorName = UIService.els.colorSelect.value;
         playerDesign.shape = UIService.els.shapeSelect.value;
         playerDesign.face = UIService.els.faceSelect.value;
@@ -2253,33 +2422,43 @@
         EffectSystem.createExplosion(player.x + player.w/2, player.y + player.h/2, coreColor);
         AudioSystem.playSound(100, 0.4, 'sawtooth', 0.15); 
 
-        const finalScore = game.score;
+        const finalScore = Math.max(0, Math.floor(game.score));
+        const canSubmitScore = isValidScoreForSubmit(finalScore);
 
         // 1. Firebase 리더보드에 점수 기록
-        if (currentUser) {
+        if (currentUser && canSubmitScore) {
             const existing = globalLeaderboard.find(entry => entry.id === currentUser.uid);
-            if (!existing || finalScore > existing.score) {
+            if (!existing || finalScore > Number(existing.score || 0)) {
                 try {
                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', currentUser.uid);
                     await setDoc(docRef, { 
-                        nickname: playerDesign.nickname, 
+                        nickname: sanitizeNickname(playerDesign.nickname), 
                         score: finalScore, 
-                        timestamp: Date.now() 
+                        timestamp: Date.now(),
+                        stars: Math.max(0, Math.floor(game.stars || 0)),
+                        runTime: Number((game.runTime || 0).toFixed(2))
                     });
                 } catch(e) {
                     console.error("Score Submit Error:", e);
                 }
             }
+        } else if (!canSubmitScore) {
+            console.warn('Suspicious score blocked:', finalScore);
         }
 
-        // 2. 실시간 글로벌 등수 계산
-        let rankNum = 1;
-        for (const entry of globalLeaderboard) {
-            if (entry.id === currentUser?.uid) continue; // 자신의 기존 기록 제외
-            if (entry.score > finalScore) rankNum++;
-        }
-        
-        const totalPlayers = Math.max(globalLeaderboard.length, 1);
+        // 2. 저장 직후에도 등수가 어긋나지 않도록 현재 기록을 로컬 병합해서 계산
+        const myRankEntry = {
+            id: currentUser?.uid || '__local_player__',
+            nickname: sanitizeNickname(playerDesign.nickname),
+            score: finalScore
+        };
+        const mergedLeaderboard = [
+            ...globalLeaderboard.filter(entry => entry.id !== myRankEntry.id),
+            myRankEntry
+        ].sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+        const rankIndex = mergedLeaderboard.findIndex(entry => entry.id === myRankEntry.id);
+        const rankNum = rankIndex >= 0 ? rankIndex + 1 : 1;
+        const totalPlayers = Math.max(mergedLeaderboard.length, 1);
         const topPct = ((rankNum / totalPlayers) * 100).toFixed(1);
 
         UIService.resetAiCoach();
@@ -2338,7 +2517,8 @@
           world.scrollX += currentSpeed * effDt;
           
           if (game.state === GAME_STATE.PLAYING) {
-              game.score = Math.floor(world.scrollX / 10) + (game.stars * 1000);
+              game.runTime += effDt;
+              game.score = Math.floor(world.scrollX / 10) + (game.stars * 1000) + game.bonusScore;
               UIService.updateScore(game.score);
           }
 
@@ -2351,10 +2531,14 @@
 
           if (game.state === GAME_STATE.PLAYING) {
               PhysicsSystem.handleInput(effDt);
-              PhysicsSystem.resolveCollisions(effDt);
           }
           
           PhysicsSystem.updatePhysics(effDt);
+
+          if (game.state === GAME_STATE.PLAYING) {
+              PhysicsSystem.resolveCollisions(effDt);
+          }
+          
           PhysicsSystem.updateTrail(effDt);
           
           if (game.state === GAME_STATE.PLAYING) checkLevelProgress();
@@ -2370,8 +2554,14 @@
       // 7. INPUT & EVENT BINDINGS
       // ==========================================
       function handlePress() {
-        input.pressed = true; input.jumpBuffer = 0.15; AudioSystem.tryUnlock();
-        // 메뉴에서는 버튼으로만 시작하도록 수정 (화면 터치로 시작 X)
+        input.pressed = true;
+        input.jumpBuffer = 0.15;
+        AudioSystem.tryUnlock();
+
+        // 로비에서는 빈 화면 터치/스페이스로 바로 시작하지 않습니다.
+        // 모바일에서 닉네임/스킨 조작 중 의도치 않게 게임이 시작되는 문제 방지.
+        if (game.state === GAME_STATE.SETUP) return;
+
         if ((game.state === GAME_STATE.DEAD || game.state === GAME_STATE.CLEAR) && game.timer <= -0.5) { 
             resetRun(true); UIService.hideResultCard(); game.state = GAME_STATE.PLAYING; BGMSystem.start();
         }
@@ -2384,6 +2574,7 @@
             if (["Space", "ArrowUp", "KeyR", "Escape"].includes(e.code) && document.activeElement !== UIService.els.nicknameInput) e.preventDefault();
             if (document.activeElement === UIService.els.nicknameInput) return;
 
+            if (e.code === 'KeyH') DEBUG.hitbox = !DEBUG.hitbox;
             if ((e.code === 'Space' || e.code === 'ArrowUp') && !e.repeat) handlePress();
             if (e.code === 'KeyR' && (game.state === GAME_STATE.PLAYING || game.state === GAME_STATE.PAUSED || game.state === GAME_STATE.DEAD || game.state === GAME_STATE.CLEAR)) {
                 UIService.hideResultCard(); resetRun(true); game.state = GAME_STATE.PLAYING; BGMSystem.start();
@@ -2404,19 +2595,14 @@
 
         const pOpts = { passive: false };
 
-        // UI 영역 터치 검사 (스크롤 및 클릭 허용)
-        const isUIInteraction = (e) => {
-            return e.target.closest('.card') || ['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName);
-        };
-
         // 모바일 터치 반응성 극대화 (pointerdown 보다 빠른 touchstart 우선 처리)
         window.addEventListener('touchstart', (e) => {
             AudioSystem.tryUnlock(); // 가장 먼저 오디오 권한 획득 시도
-            if (isUIInteraction(e)) return; // UI 영역 터치 시 무시 (스크롤 방해 안 함)
+            if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
             e.preventDefault(); window.focus(); handlePress(); 
         }, pOpts);
         window.addEventListener('touchend', (e) => {
-            if (isUIInteraction(e)) return;
+            if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
             e.preventDefault(); handleRelease(); 
         }, pOpts);
 
@@ -2424,12 +2610,12 @@
         window.addEventListener('pointerdown', (e) => {
             AudioSystem.tryUnlock(); // 마우스 환경에서도 최우선으로 오디오 권한 획득
             if (e.pointerType === 'touch') return; // 모바일은 touchstart에서 이미 처리함
-            if (isUIInteraction(e)) return;
+            if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
             e.preventDefault(); window.focus(); handlePress(); 
         }, pOpts);
         window.addEventListener('pointerup', (e) => {
             if (e.pointerType === 'touch') return;
-            if (isUIInteraction(e)) return;
+            if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
             e.preventDefault(); handleRelease(); 
         }, pOpts);
         window.addEventListener('pointercancel', handleRelease, pOpts);
@@ -2462,13 +2648,20 @@
             UIService.showAiCoachFeedback(feedback);
         });
 
-        window.addEventListener('resize', () => {
+        const resizeGameCanvas = () => {
             const dpr = Math.min(window.devicePixelRatio || 1, CONFIG.dprMax);
-            canvas.width = CONFIG.width * dpr; canvas.height = CONFIG.height * dpr;
+            canvas.width = CONFIG.width * dpr;
+            canvas.height = CONFIG.height * dpr;
             canvasCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            const fit = Math.min(window.innerWidth / CONFIG.width, window.innerHeight / CONFIG.height);
-            canvas.style.width = `${CONFIG.width * fit}px`; canvas.style.height = `${CONFIG.height * fit}px`;
-        });
+
+            const vw = window.visualViewport?.width || window.innerWidth;
+            const vh = window.visualViewport?.height || window.innerHeight;
+            const fit = Math.min(vw / CONFIG.width, vh / CONFIG.height);
+            canvas.style.width = `${Math.floor(CONFIG.width * fit)}px`;
+            canvas.style.height = `${Math.floor(CONFIG.height * fit)}px`;
+        };
+        window.addEventListener('resize', resizeGameCanvas);
+        window.visualViewport?.addEventListener('resize', resizeGameCanvas);
       }
 
       function loop(ts) {
