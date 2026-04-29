@@ -906,7 +906,7 @@
             x: CONFIG.playerX, y: CONFIG.groundY - 44, w: 44, h: 44,
             vy: 0, grounded: true, coyote: CONFIG.coyoteTime, rotation: 0,
             jumps: 0, maxJumps: 2, jumpLevel: 2,
-            isFlying: false, flightTime: 0, maxFlightTime: 6.0,
+            isFlying: false, flightTime: 0, maxFlightTime: 6.0, flightInverted: false,
             gravityFlipped: false, isDashing: false, dashTime: 0, trail: [],
             isInvincible: false, invincibleTime: 0
         }),
@@ -1469,6 +1469,9 @@
       };
 
       const PhysicsSystem = {
+        getPlayerHitbox() {
+            return { x: player.x + 2, y: player.y + 2, w: player.w - 4, h: player.h - 4 };
+        },
         doJump(isDouble = false) {
             let forceMult = 1.0;
             if (isDouble) {
@@ -1484,27 +1487,56 @@
             else { EffectSystem.createDust(player.x + player.w/2, footY, coreColor); AudioSystem.playSound(150, 0.1, 'square', 0.03); }
         },
         activateFlight() {
-            player.isFlying = true; player.flightTime = player.maxFlightTime; player.jumps = 0; player.gravityFlipped = false; 
-            player.vy = -CONFIG.jumpForce * 0.6; player.grounded = false; 
-            AudioSystem.playSound(800, 0.3, 'sine', 0.05); EffectSystem.triggerShake(5, 0.2);
-            AudioSystem.startFlightSound();
+            const alreadyFlying = player.isFlying;
+            const flightInverted = alreadyFlying ? player.flightInverted : player.gravityFlipped;
+            player.isFlying = true;
+            player.flightTime = player.maxFlightTime;
+            player.flightInverted = flightInverted;
+            player.jumps = 0;
+            player.gravityFlipped = false;
+            player.isDashing = false;
+            player.vy = flightInverted ? 0 : -CONFIG.jumpForce * 0.6;
+            player.grounded = false;
+            AudioSystem.playSound(800, 0.3, 'sine', 0.05);
+            EffectSystem.triggerShake(5, 0.2);
+            if (!alreadyFlying) AudioSystem.startFlightSound();
+        },
+        deactivateFlight(spawnEffect = true) {
+            const wasFlying = player.isFlying || player.flightTime > 0;
+            const wasInverted = player.flightInverted;
+            player.isFlying = false;
+            player.flightTime = 0;
+            player.flightInverted = false;
+            AudioSystem.stopFlightSound();
+
+            if (wasFlying && spawnEffect) {
+                const footY = wasInverted ? player.y : player.y + player.h;
+                EffectSystem.createDust(player.x + player.w / 2, footY, '#ffea00');
+                EffectSystem.createRing(player.x + player.w / 2, footY, '#ffea00');
+                AudioSystem.playSound(180, 0.08, 'square', 0.035);
+            }
         },
         handleInput(dt) {
-            const pRect = { x: player.x + 2, y: player.y + 2, w: player.w - 4, h: player.h - 4 };
             if (input.jumpBuffer > 0) input.jumpBuffer -= dt;
 
             if (player.isFlying) {
                 player.flightTime -= dt;
                 
                 if (player.flightTime <= 0) { 
-                    player.isFlying = false; 
-                    AudioSystem.stopFlightSound();
+                    this.deactivateFlight(false);
+                    return;
                 }
                 
                 if (input.pressed) {
-                    player.vy -= CONFIG.flightForce * dt;
-                    player.vy = Math.max(player.vy, -CONFIG.jumpForce * 1.2); 
-                    if (Math.random() < 0.4) EffectSystem.createDust(player.x + player.w/2, player.y + player.h, '#ffea00');
+                    if (player.flightInverted) {
+                        player.vy += CONFIG.flightForce * dt;
+                        player.vy = Math.min(player.vy, CONFIG.jumpForce * 1.2);
+                    } else {
+                        player.vy -= CONFIG.flightForce * dt;
+                        player.vy = Math.max(player.vy, -CONFIG.jumpForce * 1.2);
+                    }
+                    const thrustY = player.flightInverted ? player.y : player.y + player.h;
+                    if (Math.random() < 0.4) EffectSystem.createDust(player.x + player.w/2, thrustY, '#ffea00');
                 }
                 AudioSystem.updateFlightSound(input.pressed);
             } else if (player.isDashing) {
@@ -1531,8 +1563,10 @@
             player.coyote = Math.max(0, player.coyote - dt);
             
             if (player.isFlying) {
-                player.vy += CONFIG.gravity * 0.6 * dt;
-                player.vy = Math.min(player.vy, CONFIG.maxFallSpeed);
+                const flightGravity = (player.flightInverted ? -1 : 1) * CONFIG.gravity * 0.6;
+                player.vy += flightGravity * dt;
+                if (player.flightInverted) player.vy = Math.max(player.vy, -CONFIG.maxFallSpeed);
+                else player.vy = Math.min(player.vy, CONFIG.maxFallSpeed);
             } else {
                 player.vy += (player.gravityFlipped ? -CONFIG.gravity : CONFIG.gravity) * dt;
                 if (!player.gravityFlipped) player.vy = Math.min(player.vy, CONFIG.maxFallSpeed);
@@ -1545,12 +1579,56 @@
             const floorY = CONFIG.groundY - player.h;
             const ceilY = CONFIG.ceilY;
 
+            if (player.isFlying) {
+                if (player.y >= floorY) {
+                    player.y = floorY;
+                    if (player.flightInverted) {
+                        player.vy = Math.min(0, player.vy);
+                    } else if (player.vy > 0) {
+                        this.deactivateFlight(true);
+                        player.vy = 0;
+                        player.grounded = true;
+                        player.coyote = CONFIG.coyoteTime;
+                        player.jumps = 0;
+                    }
+                }
+
+                if (player.y <= ceilY) {
+                    player.y = ceilY;
+                    player.vy = Math.max(0, player.vy);
+                }
+
+                return;
+            }
+
             if (!player.gravityFlipped) {
-                if (player.y >= floorY) { player.y = floorY; if (player.vy > 0) { player.vy = 0; player.grounded = true; player.coyote = CONFIG.coyoteTime; player.jumps = 0; } }
+                if (player.y >= floorY) {
+                    player.y = floorY;
+                    if (player.vy > 0) {
+                        if (player.isFlying) this.deactivateFlight(true);
+                        player.vy = 0;
+                        player.grounded = true;
+                        player.coyote = CONFIG.coyoteTime;
+                        player.jumps = 0;
+                    }
+                }
                 if (player.y < ceilY) { player.y = ceilY; player.vy = Math.max(0, player.vy); }
             } else {
-                if (player.y <= ceilY) { player.y = ceilY; if (player.vy < 0) { player.vy = 0; player.grounded = true; player.coyote = CONFIG.coyoteTime; player.jumps = 0; } }
-                if (player.y > floorY) { player.y = floorY; player.vy = Math.min(0, player.vy); }
+                if (player.y <= ceilY) {
+                    player.y = ceilY;
+                    if (player.vy < 0) {
+                        if (player.isFlying) this.deactivateFlight(true);
+                        player.vy = 0;
+                        player.grounded = true;
+                        player.coyote = CONFIG.coyoteTime;
+                        player.jumps = 0;
+                    }
+                }
+                if (player.y > floorY) {
+                    player.y = floorY;
+                    if (player.vy > 0 && player.isFlying) this.deactivateFlight(true);
+                    player.vy = Math.min(0, player.vy);
+                }
             }
         },
         checkRectCollision(r1, r2) {
@@ -1577,17 +1655,16 @@
             return hit;
         },
         resolveCollisions(dt) {
-            const pRect = { x: player.x + 2, y: player.y + 2, w: player.w - 4, h: player.h - 4 };
-
             // 충돌 판정은 반드시 '아이템/상태 변경 → 착지 → 파괴 가능 오브젝트 → 사망 판정' 순서로 처리합니다.
             // 이렇게 나누면 같은 프레임에 아이템을 먹고 바로 죽는 억까 판정을 크게 줄일 수 있습니다.
-            this.resolveCollectibles(pRect);
-            this.resolvePlatforms(pRect, dt);
-            this.resolveBreakables(pRect);
-            this.resolveFatalObstacles(pRect);
+            this.resolveCollectibles(this.getPlayerHitbox());
+            this.resolvePlatforms(this.getPlayerHitbox(), dt);
+            this.resolveBreakables(this.getPlayerHitbox());
+            if (game.state !== GAME_STATE.PLAYING) return;
+            this.resolveFatalObstacles(this.getPlayerHitbox());
 
-            if (player.grounded && !player.isFlying) {
-                if (player.isFlying) { player.isFlying = false; player.flightTime = 0; AudioSystem.stopFlightSound(); }
+            if (player.grounded) {
+                if (player.isFlying) this.deactivateFlight(true);
                 if (player.isDashing) player.isDashing = false;
             }
         },
@@ -1602,7 +1679,12 @@
             const radius = ob.r || (ob.w / 2);
             return { x: sx - radius - padding, y: ob.y - radius - padding, w: radius * 2 + padding * 2, h: radius * 2 + padding * 2 };
         },
+        getFlightItemHitbox(ob) {
+            const sx = ob.x - world.scrollX;
+            return { x: sx - 15, y: ob.y - 15, w: ob.w + 30, h: ob.h + 30 };
+        },
         resolveCollectibles(pRect) {
+            let abilityUsedThisFrame = false;
             for (const ob of world.obstacles) {
                 if (!this.isObstacleNearScreen(ob, 100)) continue;
                 const sx = ob.x - world.scrollX;
@@ -1627,9 +1709,11 @@
                 }
 
                 if (ob.type === OBSTACLE_TYPE.ORB_DASH && !ob.used) {
+                    if (abilityUsedThisFrame || player.isFlying) continue;
                     const hitboxDash = this.getCircleItemHitbox(ob, 30);
                     if (this.checkRectCollision(pRect, hitboxDash)) {
                         ob.used = true;
+                        abilityUsedThisFrame = true;
                         player.isDashing = true;
                         player.dashTime = 0.55;
                         player.vy = 0;
@@ -1647,9 +1731,11 @@
 
                 // ORB: 점프 버퍼 없이도 충돌 시 더블 점프 발동
                 if (ob.type === OBSTACLE_TYPE.ORB && !ob.used) {
+                    if (abilityUsedThisFrame || player.isFlying) continue;
                     const hitboxOrb = this.getCircleItemHitbox(ob, 30);
                     if (this.checkRectCollision(pRect, hitboxOrb)) {
                         ob.used = true;
+                        abilityUsedThisFrame = true;
                         player.jumps = 1;
                         this.doJump(true);
                         EffectSystem.createExplosion(sx, ob.y, '#ffea00');
@@ -1660,9 +1746,11 @@
                 }
 
                 if (ob.type === OBSTACLE_TYPE.PORTAL_GRAV && !ob.used) {
+                    if (abilityUsedThisFrame || player.isFlying) continue;
                     const hitboxGrav = { x: sx, y: ob.y, w: ob.w, h: ob.h };
                     if (this.checkRectCollision(pRect, hitboxGrav)) {
                         ob.used = true;
+                        abilityUsedThisFrame = true;
                         player.gravityFlipped = (ob.dir === 'up');
                         // 기존 1.5배는 너무 강해서 패턴 안정성이 떨어져 1.15배로 완화
                         player.vy = player.gravityFlipped ? -CONFIG.jumpForce * 1.15 : CONFIG.jumpForce * 1.15;
@@ -1676,9 +1764,11 @@
                 }
 
                 if (ob.type === OBSTACLE_TYPE.ITEM_FLIGHT && !ob.used) {
-                    const hitboxFlight = { x: sx - 15, y: ob.y - 15, w: ob.w + 30, h: ob.h + 30 };
+                    if (abilityUsedThisFrame) continue;
+                    const hitboxFlight = this.getFlightItemHitbox(ob);
                     if (this.checkRectCollision(pRect, hitboxFlight)) {
                         ob.used = true;
+                        abilityUsedThisFrame = true;
                         this.activateFlight();
                         player.isInvincible = true;
                         player.invincibleTime = 1.2;
@@ -1733,13 +1823,15 @@
                 const hitbox = this.getHitbox(ob, sx);
                 if (!this.checkRectCollision(pRect, hitbox)) continue;
 
-                if (player.isDashing || player.isInvincible) {
+                if (player.isDashing) {
                     ob.destroyed = true;
                     EffectSystem.createGlassShatter(sx, ob.y);
                     AudioSystem.playSound(200, 0.15, 'square', 0.1);
                     EffectSystem.triggerShake(8, 0.1);
                     game.bonusScore += 300;
-                    EffectSystem.spawnFloatingText('+500 BREAK!', player.x + player.w / 2 + world.scrollX, player.y - 30, '#00ffff');
+                    EffectSystem.spawnFloatingText('+300 BREAK!', player.x + player.w / 2 + world.scrollX, player.y - 30, '#00ffff');
+                } else if (player.isInvincible) {
+                    continue;
                 } else {
                     ob.fatalHit = true;
                     game.hitStop = 0.1;
@@ -1789,7 +1881,7 @@
                 if (!player.isFlying && !player.isDashing) {
                      player.rotation += (world.speed / (player.w / 2)) * dt * (player.gravityFlipped ? -1 : 1);
                 } else if (player.isFlying) {
-                     player.rotation = player.gravityFlipped ? 0.2 : -0.2;
+                     player.rotation = player.flightInverted ? 0.2 : -0.2;
                 } else if (player.isDashing) {
                      player.rotation += 25 * dt; 
                 }
@@ -1798,13 +1890,20 @@
                 if (player.isFlying) currentColor = '#ffea00';
                 else if (player.isDashing) currentColor = '#ff0055';
 
-                if (Math.random() < (player.isDashing ? 0.6 : 0.3)) {
-                  player.trail.push({ x: player.x, y: player.y, rot: player.rotation, life: player.isDashing ? 0.3 : 0.2, color: currentColor });
+                const speedRatio = Math.min(1, Math.max(0, (world.speed - CONFIG.baseSpeed) / (CONFIG.maxSpeed - CONFIG.baseSpeed)));
+                const speedBoost = player.isDashing ? 1.35 : 1;
+                const trailLife = (0.18 + speedRatio * 0.42) * speedBoost;
+                const spawnChance = Math.min(0.9, (0.28 + speedRatio * 0.38) * (player.isDashing ? 1.45 : 1));
+                const maxTrail = Math.floor(18 + speedRatio * 34 + (player.isDashing ? 16 : 0));
+
+                if (Math.random() < spawnChance) {
+                  player.trail.push({ x: player.x, y: player.y, rot: player.rotation, life: trailLife, maxLife: trailLife, color: currentColor });
                 }
                 for (let i = player.trail.length - 1; i >= 0; i--) {
                   player.trail[i].life -= dt;
                   if (player.trail[i].life <= 0) player.trail.splice(i, 1);
                 }
+                if (player.trail.length > maxTrail) player.trail.splice(0, player.trail.length - maxTrail);
             } else {
                 player.rotation = 0;
                 player.trail = [];
@@ -2182,12 +2281,12 @@
             player.trail.forEach(t => {
                 canvasCtx.save();
                 canvasCtx.translate(t.x + player.w/2, t.y + player.h/2);
-                if (player.gravityFlipped) canvasCtx.scale(1, -1);
+                if (player.gravityFlipped || player.flightInverted) canvasCtx.scale(1, -1);
                 canvasCtx.rotate(t.rot);
                 
                 this.buildShapePath(canvasCtx, playerDesign.shape, player.w * 0.9);
                 canvasCtx.fillStyle = t.color;
-                canvasCtx.globalAlpha = t.life * 2; 
+                canvasCtx.globalAlpha = Math.max(0, Math.min(0.75, (t.life / (t.maxLife || 0.2)) * 0.75)); 
                 canvasCtx.fill();
                 
                 canvasCtx.restore();
@@ -2217,7 +2316,7 @@
                 canvasCtx.restore();
             }
 
-            if (player.gravityFlipped) canvasCtx.scale(1, -1);
+            if (player.gravityFlipped || player.flightInverted) canvasCtx.scale(1, -1);
             canvasCtx.rotate(player.rotation);
             
             let currentColor = CUSTOM_COLORS[playerDesign.colorName];
@@ -2305,7 +2404,7 @@
             canvasCtx.globalAlpha = 1;
         },
         drawHitboxes() {
-            const pRect = { x: player.x + 2, y: player.y + 2, w: player.w - 4, h: player.h - 4 };
+            const pRect = PhysicsSystem.getPlayerHitbox();
             canvasCtx.save();
             canvasCtx.lineWidth = 2;
             canvasCtx.setLineDash([6, 4]);
@@ -2323,7 +2422,7 @@
                 } else if (ob.type === OBSTACLE_TYPE.PORTAL_GRAV) {
                     hitbox = { x: sx, y: ob.y, w: ob.w, h: ob.h };
                 } else if (ob.type === OBSTACLE_TYPE.ITEM_FLIGHT) {
-                    hitbox = { x: sx - 10, y: ob.y - 10, w: ob.w + 20, h: ob.h + 20 };
+                    hitbox = PhysicsSystem.getFlightItemHitbox(ob);
                 } else {
                     hitbox = PhysicsSystem.getHitbox(ob, sx);
                 }
