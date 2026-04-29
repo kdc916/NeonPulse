@@ -1490,7 +1490,7 @@
             AudioSystem.startFlightSound();
         },
         handleInput(dt) {
-            const pRect = { x: player.x + 4, y: player.y + 4, w: player.w - 8, h: player.h - 8 };
+            const pRect = { x: player.x + 2, y: player.y + 2, w: player.w - 4, h: player.h - 4 };
             if (input.jumpBuffer > 0) input.jumpBuffer -= dt;
 
             if (player.isFlying) {
@@ -1513,23 +1513,8 @@
                 if (player.dashTime <= 0) player.isDashing = false;
             } else {
                 if (input.jumpBuffer > 0) {
-                    let hitAction = false;
-                    for (const ob of world.obstacles) {
-                        if (ob.type === OBSTACLE_TYPE.ORB && !ob.used) {
-                            const sx = ob.x - world.scrollX;
-                            const hitbox = { x: sx - ob.r - 20, y: ob.y - ob.r - 20, w: ob.r*2 + 40, h: ob.r*2 + 40 };
-                            if (this.checkRectCollision(pRect, hitbox)) {
-                                ob.used = true; player.jumps = 1; this.doJump(true); 
-                                EffectSystem.createExplosion(sx, ob.y, '#ffea00');
-                                EffectSystem.triggerShake(5, 0.1); AudioSystem.playSound(600, 0.15, 'triangle', 0.05);
-                                hitAction = true; input.jumpBuffer = 0; break;
-                            }
-                        }
-                    }
-                    if (!hitAction) {
-                        if (player.grounded || player.coyote > 0) { this.doJump(false); input.jumpBuffer = 0; }
-                        else if (player.jumps < player.maxJumps && !player.grounded) { this.doJump(true); input.jumpBuffer = 0; }
-                    }
+                    if (player.grounded || player.coyote > 0) { this.doJump(false); input.jumpBuffer = 0; }
+                    else if (player.jumps < player.maxJumps && !player.grounded) { this.doJump(true); input.jumpBuffer = 0; }
                 }
             }
         },
@@ -1592,7 +1577,7 @@
             return hit;
         },
         resolveCollisions(dt) {
-            const pRect = { x: player.x + 4, y: player.y + 4, w: player.w - 8, h: player.h - 8 };
+            const pRect = { x: player.x + 2, y: player.y + 2, w: player.w - 4, h: player.h - 4 };
 
             // 충돌 판정은 반드시 '아이템/상태 변경 → 착지 → 파괴 가능 오브젝트 → 사망 판정' 순서로 처리합니다.
             // 이렇게 나누면 같은 프레임에 아이템을 먹고 바로 죽는 억까 판정을 크게 줄일 수 있습니다.
@@ -1601,7 +1586,7 @@
             this.resolveBreakables(pRect);
             this.resolveFatalObstacles(pRect);
 
-            if (player.grounded) {
+            if (player.grounded && !player.isFlying) {
                 if (player.isFlying) { player.isFlying = false; player.flightTime = 0; AudioSystem.stopFlightSound(); }
                 if (player.isDashing) player.isDashing = false;
             }
@@ -1611,9 +1596,11 @@
             const w = ob.w || (ob.r ? ob.r * 2 : 40);
             return !(sx + w < -margin || sx > CONFIG.width + margin);
         },
-        getCircleItemHitbox(ob, padding = 20) {
+        getCircleItemHitbox(ob, padding = 35) {
             const sx = ob.x - world.scrollX;
-            return { x: sx - ob.r - padding, y: ob.y - ob.r - padding, w: ob.r * 2 + padding * 2, h: ob.r * 2 + padding * 2 };
+            // STAR는 r이 없고 w/h만 있으므로 w를 반지름으로 사용
+            const radius = ob.r || (ob.w / 2);
+            return { x: sx - radius - padding, y: ob.y - radius - padding, w: radius * 2 + padding * 2, h: radius * 2 + padding * 2 };
         },
         resolveCollectibles(pRect) {
             for (const ob of world.obstacles) {
@@ -1621,7 +1608,7 @@
                 const sx = ob.x - world.scrollX;
 
                 if (ob.type === OBSTACLE_TYPE.STAR && !ob.collected) {
-                    const hitbox = this.getHitbox(ob, sx);
+                    const hitbox = this.getCircleItemHitbox(ob, 25);
                     if (this.checkRectCollision(pRect, hitbox)) {
                         ob.collected = true;
                         game.stars++;
@@ -1631,15 +1618,16 @@
                         game.comboTimer = 2.0;
                         game.comboUITimer = 0.8;
                         UIService.showCombo(game.starCombo);
-                        const bonus = 350 + (game.starCombo * 50);
-                        game.bonusScore += bonus;
-                        EffectSystem.spawnFloatingText(`+${bonus}`, player.x + player.w / 2 + world.scrollX, player.y - 30, '#ffea00');
+                        // 별 수집 시 점수: 기본 500점 + 콤보 보너스
+                        const starScore = 500 + (game.starCombo * 100);
+                        game.bonusScore += starScore;
+                        EffectSystem.spawnFloatingText(`+${starScore}`, player.x + player.w / 2 + world.scrollX, player.y - 30, '#ffea00');
                     }
                     continue;
                 }
 
                 if (ob.type === OBSTACLE_TYPE.ORB_DASH && !ob.used) {
-                    const hitboxDash = this.getCircleItemHitbox(ob, 20);
+                    const hitboxDash = this.getCircleItemHitbox(ob, 30);
                     if (this.checkRectCollision(pRect, hitboxDash)) {
                         ob.used = true;
                         player.isDashing = true;
@@ -1653,6 +1641,20 @@
                         EffectSystem.createExplosion(sx, ob.y, '#ff0055');
                         EffectSystem.triggerShake(10, 0.2);
                         AudioSystem.playSound(400, 0.2, 'sawtooth', 0.05);
+                    }
+                    continue;
+                }
+
+                // ORB: 점프 버퍼 없이도 충돌 시 더블 점프 발동
+                if (ob.type === OBSTACLE_TYPE.ORB && !ob.used) {
+                    const hitboxOrb = this.getCircleItemHitbox(ob, 30);
+                    if (this.checkRectCollision(pRect, hitboxOrb)) {
+                        ob.used = true;
+                        player.jumps = 1;
+                        this.doJump(true);
+                        EffectSystem.createExplosion(sx, ob.y, '#ffea00');
+                        EffectSystem.triggerShake(5, 0.1);
+                        AudioSystem.playSound(600, 0.15, 'triangle', 0.05);
                     }
                     continue;
                 }
@@ -1674,7 +1676,7 @@
                 }
 
                 if (ob.type === OBSTACLE_TYPE.ITEM_FLIGHT && !ob.used) {
-                    const hitboxFlight = { x: sx - 10, y: ob.y - 10, w: ob.w + 20, h: ob.h + 20 };
+                    const hitboxFlight = { x: sx - 15, y: ob.y - 15, w: ob.w + 30, h: ob.h + 30 };
                     if (this.checkRectCollision(pRect, hitboxFlight)) {
                         ob.used = true;
                         this.activateFlight();
@@ -1691,6 +1693,10 @@
             for (const ob of world.obstacles) {
                 if (![OBSTACLE_TYPE.PLATFORM, OBSTACLE_TYPE.BLOCK, OBSTACLE_TYPE.TRAPEZOID].includes(ob.type)) continue;
                 if (!this.isObstacleNearScreen(ob, 100)) continue;
+
+                // 비행 모드에서는 PLATFORM/BLOCK/TRAPEZOID 착지 처리 건너뛰기
+                // (이동 가능한 장애물이므로 통과하거나 충돌死亡的 처리만 함)
+                if (player.isFlying) continue;
 
                 const sx = ob.x - world.scrollX;
                 if (!player.gravityFlipped) {
@@ -1732,7 +1738,7 @@
                     EffectSystem.createGlassShatter(sx, ob.y);
                     AudioSystem.playSound(200, 0.15, 'square', 0.1);
                     EffectSystem.triggerShake(8, 0.1);
-                    game.bonusScore += 500;
+                    game.bonusScore += 300;
                     EffectSystem.spawnFloatingText('+500 BREAK!', player.x + player.w / 2 + world.scrollX, player.y - 30, '#00ffff');
                 } else {
                     ob.fatalHit = true;
@@ -1745,9 +1751,24 @@
         },
         resolveFatalObstacles(pRect) {
             const fatalObstacles = [OBSTACLE_TYPE.SPIKE, OBSTACLE_TYPE.SPIKE_DOWN, OBSTACLE_TYPE.BLOCK, OBSTACLE_TYPE.TRAPEZOID, OBSTACLE_TYPE.RHOMBUS];
-            if (player.isFlying) fatalObstacles.push(OBSTACLE_TYPE.PLATFORM);
+            // 비행 모드에서는 PLATFORM도 치명적 장애물이 되지만, 이미 resolvePlatforms에서 처리됨
+            // 따라서 fatalObstacles에 추가하지 않고 별도 처리
 
             for (const ob of world.obstacles) {
+                // 비행 모드에서 PLATFORM 충돌 시 사망 처리 (착지하지 않은 경우)
+                if (player.isFlying && ob.type === OBSTACLE_TYPE.PLATFORM) {
+                    if (!this.isObstacleNearScreen(ob, 100)) continue;
+                    const sx = ob.x - world.scrollX;
+                    const hitbox = this.getHitbox(ob, sx);
+                    if (!this.checkRectCollision(pRect, hitbox)) continue;
+                    if (player.isInvincible) continue;
+                    ob.fatalHit = true;
+                    game.hitStop = 0.1;
+                    game.deathCause = '플랫폼 충돌';
+                    handleGameOver();
+                    return;
+                }
+
                 if (!fatalObstacles.includes(ob.type)) continue;
                 if (!this.isObstacleNearScreen(ob, 100)) continue;
 
@@ -2284,7 +2305,7 @@
             canvasCtx.globalAlpha = 1;
         },
         drawHitboxes() {
-            const pRect = { x: player.x + 4, y: player.y + 4, w: player.w - 8, h: player.h - 8 };
+            const pRect = { x: player.x + 2, y: player.y + 2, w: player.w - 4, h: player.h - 4 };
             canvasCtx.save();
             canvasCtx.lineWidth = 2;
             canvasCtx.setLineDash([6, 4]);
@@ -2471,7 +2492,7 @@
       }
 
       function checkLevelProgress() {
-        const distancePerLevel = 4000;
+        const distancePerLevel = 5000;
         const currentLevel = Math.floor(world.scrollX / distancePerLevel) + 1;
         const percentToNext = ((world.scrollX % distancePerLevel) / distancePerLevel) * 100;
         
@@ -2484,7 +2505,7 @@
             EffectSystem.triggerShake(12, 0.4); 
         }
 
-        if (game.score >= 3000 && player.jumpLevel < 3) {
+        if (game.score >= 5000 && player.jumpLevel < 3) {
             player.jumpLevel = 3; player.maxJumps = 3;
             UIService.updateJump(3, '#ff0055');
             EffectSystem.createExplosion(player.x, player.y, '#ff0055');
@@ -2518,7 +2539,7 @@
           
           if (game.state === GAME_STATE.PLAYING) {
               game.runTime += effDt;
-              game.score = Math.floor(world.scrollX / 10) + (game.stars * 1000) + game.bonusScore;
+              game.score = Math.floor(world.scrollX / 10) + game.bonusScore;
               UIService.updateScore(game.score);
           }
 
