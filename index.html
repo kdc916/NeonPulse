@@ -566,6 +566,10 @@
               <div class="preview-box">
                   <canvas id="previewCanvas" width="60" height="60"></canvas>
               </div>
+              <!-- 고유 외형 특성 실시간 정보 설명창 -->
+              <div id="shapePerkDesc" style="grid-column: span 2; font-size: 11px; color: var(--neon-cyan); background: rgba(0, 255, 255, 0.05); padding: 8px 10px; border-radius: 6px; border: 1px dashed rgba(0,255,255,0.25); text-align: left; font-weight: 600; line-height: 1.4;">
+                  외형 특성 로드 중...
+              </div>
           </div>
 
           <!-- 글로벌 리더보드 영역 -->
@@ -722,6 +726,21 @@
       };
       
       const CUSTOM_FACES = ['Neutral', 'Wink', 'Cat', 'Cool', 'Happy', 'Angry', 'UwU', 'Derp', 'Sleepy', 'Ninja'];
+
+      // 스킨 형태에 따른 고유 패시브 어트리뷰트 정의
+      const PERK_DESCS = {
+          'Square': '🧲 스타 마그넷: 주변의 별들을 플레이어 근처로 끌어당깁니다.',
+          'Circle': '⚡ 대시 하이퍼: 대시(Orb Dash) 지속 시간이 0.1초 증가합니다.',
+          'Diamond': '🎯 어큐레이트: 하강 조작이 약간 추가되어 날렵하게 착지합니다.',
+          'UFO': '🔋 배터리 세이버: 비행(FLY)의 가스 충전 소모 효율이 30% 증가합니다.',
+          'Cross': '🛡️ 세이프 에어: 발판 끄트머리 잔류 공중 점프 보정이 1.5배로 증가합니다.',
+          'Hexagon': '💎 세이빙 실드: 최초 1회 치명적 충돌 위기 시 장애물을 부수고 무적이 됩니다.',
+          'Triangle': '🚀 얼리 콤보: 트리플 점프 활성화 스코어 조건이 4,000점으로 완화됩니다.',
+          'Pentagon': '⭐ 콤보 시너지: 별을 수집할 때 연쇄 콤보 보너스 점수가 2배로 증가합니다.'
+      };
+
+      // 인터랙티브 사운드 디자인을 위한 C-Pentatonic 스케일 음계 주파수 테이블
+      const MELODIC_SCALE = [261.63, 311.13, 349.23, 392.00, 466.16, 523.25, 622.25, 698.46, 783.99, 932.33, 1046.50];
 
       // ==========================================
       // 2. SERVICES & FACTORIES
@@ -900,7 +919,8 @@
             currentLevel: 1, levelUpTimer: 0,
             starCombo: 0, comboTimer: 0, comboUITimer: 0,
             hitStop: 0, deathCause: '',
-            timer: 0, muted: prevMuted, flash: 0, shakeTime: 0, shakeMag: 0, audioInit: prevAudioInit
+            timer: 0, muted: prevMuted, flash: 0, shakeTime: 0, shakeMag: 0, audioInit: prevAudioInit,
+            glitchTimer: 0 // 글리치 연출용 타이머 추가
         }),
         createPlayer: () => ({
             x: CONFIG.playerX, y: CONFIG.groundY - 44, w: 44, h: 44,
@@ -908,13 +928,15 @@
             jumps: 0, maxJumps: 2, jumpLevel: 2,
             isFlying: false, flightTime: 0, maxFlightTime: 6.0, flightInverted: false,
             gravityFlipped: false, isDashing: false, dashTime: 0, trail: [],
-            isInvincible: false, invincibleTime: 0
+            isInvincible: false, invincibleTime: 0,
+            shieldActive: true // Hexagon 구조 특성 실드 충전 상태
         }),
         createWorld: () => ({
             scrollX: 0, speed: CONFIG.baseSpeed,
             obstacles: [], particles: [], bgParticles: [], floatingTexts: [],
             themeColor: '#0ff', gridColor: 'rgba(0, 255, 255, 0.15)',
-            pulseTime: 0, pulse: 1, lastGenX: 1000, chunkIndex: 0 
+            pulseTime: 0, pulse: 1, lastGenX: 1000, chunkIndex: 0,
+            cameraScale: 1.0, targetCameraScale: 1.0 // 카메라 줌스케일 변수 탑재
         })
       };
 
@@ -926,8 +948,8 @@
           flightItem: (x, y) => ({ type: OBSTACLE_TYPE.ITEM_FLIGHT, x, y, r: 30, w: 60, h: 60, used: false, color: '#ffea00' }),
           rhombus: (x, flip=false, size=60) => ({ type: OBSTACLE_TYPE.RHOMBUS, x, y: flip ? CONFIG.ceilY : CONFIG.groundY - size, w: size, h: size, color: '#ff0055', fatalHit: false }),
           trap: (x, flip=false, w=80, h=80) => ({ type: OBSTACLE_TYPE.TRAPEZOID, narrow: flip ? 'bottom' : 'top', x, y: flip ? CONFIG.ceilY : CONFIG.groundY - h, w, h, color: '#ff9d00', fatalHit: false }),
-          star: (x, y) => ({ type: OBSTACLE_TYPE.STAR, x, y, w: 30, h: 30, collected: false }),
-          portalGrav: (x, y, dir) => ({ type: OBSTACLE_TYPE.PORTAL_GRAV, x, y, w: 60, h: 100, dir, used: false }),
+          star: (x, y) => ({ type: OBSTACLE_TYPE.STAR, x, y, w: 30, h: 30, collected: false, color: '#ffea00' }),
+          portalGrav: (x, y, dir) => ({ type: OBSTACLE_TYPE.PORTAL_GRAV, x, y, w: 60, h: 100, dir, used: false, color: '#00ffff' }),
           orb: (x, y) => ({ type: OBSTACLE_TYPE.ORB, x, y, r: 24, w: 48, h: 48, used: false, color: '#ffea00' }),
           orbDash: (x, y) => ({ type: OBSTACLE_TYPE.ORB_DASH, x, y, r: 24, w: 48, h: 48, used: false, color: '#ff0055' }),
           glassWall: (x, flip=false, h=150) => ({ type: OBSTACLE_TYPE.GLASS, x, y: flip ? CONFIG.ceilY : CONFIG.groundY - h, w: 40, h, destroyed: false, color: '#ff0055', fatalHit: false })
@@ -1126,7 +1148,6 @@
             try {
                 if (!audioCtx) {
                     const AC = window.AudioContext || window.webkitAudioContext;
-                    // 모바일 지연 방지: latencyHint를 interactive(저지연)로 강제 설정
                     audioCtx = new AC({ latencyHint: 'interactive' });
                 }
                 if (audioCtx.state === 'suspended') {
@@ -1139,7 +1160,6 @@
         playSound(freq, duration, type='sine', vol=0.05) {
             if (game.muted || !audioCtx) return;
             this.tryUnlock();
-            // 효과음 즉시 재생 (모바일 딜레이의 주원인이었던 0.015초 지연 제거)
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
@@ -1335,12 +1355,10 @@
         },
         scheduler() {
             if (!this.isPlaying) return;
-            // BGM은 모바일 타이머 부정확성을 고려해 lookahead를 0.15초로 늘려 미리 예약합니다.
             while (this.nextNoteTime < audioCtx.currentTime + 0.15) {
                 this.scheduleNote(this.current16thNote, this.nextNoteTime);
                 this.nextNote();
             }
-            // 브라우저 렌더링에 밀리지 않게 여유를 두고 호출
             this.timerID = setTimeout(() => this.scheduler(), 30.0);
         }
       };
@@ -1355,9 +1373,21 @@
             UIService.els.shapeSelect.value = playerDesign.shape;
             UIService.els.faceSelect.value = playerDesign.face;
 
+            this.updatePerkText(playerDesign.shape);
+
             UIService.els.colorSelect.addEventListener('change', (e) => { playerDesign.colorName = e.target.value; RenderSystem.drawPreview(); });
-            UIService.els.shapeSelect.addEventListener('change', (e) => { playerDesign.shape = e.target.value; RenderSystem.drawPreview(); });
+            UIService.els.shapeSelect.addEventListener('change', (e) => { 
+                playerDesign.shape = e.target.value; 
+                this.updatePerkText(playerDesign.shape);
+                RenderSystem.drawPreview(); 
+            });
             UIService.els.faceSelect.addEventListener('change', (e) => { playerDesign.face = e.target.value; RenderSystem.drawPreview(); });
+        },
+        updatePerkText(shape) {
+            const descBox = document.getElementById('shapePerkDesc');
+            if (descBox) {
+                descBox.textContent = PERK_DESCS[shape] || '고유 패시브 어트리뷰트가 활성화됩니다.';
+            }
         },
         randomize() {
             const cKeys = Object.keys(CUSTOM_COLORS);
@@ -1369,6 +1399,7 @@
             UIService.els.colorSelect.value = playerDesign.colorName;
             UIService.els.shapeSelect.value = playerDesign.shape;
             UIService.els.faceSelect.value = playerDesign.face;
+            this.updatePerkText(playerDesign.shape);
             RenderSystem.drawPreview();
         },
         generateNickname() {
@@ -1420,6 +1451,7 @@
             if (game.flash > 0) game.flash = Math.max(0, game.flash - dt * 2);
             if (game.shakeTime > 0) game.shakeTime -= dt;
             if (game.levelUpTimer > 0) game.levelUpTimer -= dt;
+            if (game.glitchTimer > 0) game.glitchTimer -= dt; // 글리치 타이머 연산
             
             if (game.comboTimer > 0) {
                 game.comboTimer -= dt;
@@ -1472,6 +1504,27 @@
         getPlayerHitbox() {
             return { x: player.x + 2, y: player.y + 2, w: player.w - 4, h: player.h - 4 };
         },
+        // BGM의 리얼타임 비트 박자를 추적하여 싱크 등급을 계산하는 엔진
+        checkBeatSync() {
+            if (!audioCtx || !BGMSystem.isPlaying) return null;
+            const now = audioCtx.currentTime;
+            
+            const currentBpm = 130 + Math.floor((world.speed - CONFIG.baseSpeed) / 12);
+            const secondsPerBeat = 60.0 / currentBpm;
+            const secondsPer16th = secondsPerBeat * 0.25;
+
+            // 스케줄러 기준 가장 완벽히 일치하는 노트 위치 오차 검출
+            const nextBeatTime = BGMSystem.nextNoteTime;
+            const timeDiff = Math.abs(now - nextBeatTime);
+            const rem = timeDiff % secondsPer16th;
+            const closestDiff = Math.min(rem, secondsPer16th - rem);
+
+            // PERFECT (±0.045s), GREAT (±0.09s), COOL (±0.14s)
+            if (closestDiff < 0.045) return { rating: 'PERFECT', bonus: 500, color: '#39ff14' };
+            if (closestDiff < 0.09) return { rating: 'GREAT', bonus: 300, color: '#0ff' };
+            if (closestDiff < 0.14) return { rating: 'COOL', bonus: 100, color: '#ffea00' };
+            return null;
+        },
         doJump(isDouble = false) {
             let forceMult = 1.0;
             if (isDouble) {
@@ -1483,8 +1536,21 @@
             
             const coreColor = CUSTOM_COLORS[playerDesign.colorName];
             const footY = player.gravityFlipped ? player.y : player.y + player.h;
-            if (isDouble) { EffectSystem.createRing(player.x + player.w/2, footY, coreColor); AudioSystem.playSound(250, 0.1, 'square', 0.04); } 
-            else { EffectSystem.createDust(player.x + player.w/2, footY, coreColor); AudioSystem.playSound(150, 0.1, 'square', 0.03); }
+            if (isDouble) { 
+                EffectSystem.createRing(player.x + player.w/2, footY, coreColor); 
+                AudioSystem.playSound(250, 0.1, 'square', 0.04); 
+            } else { 
+                EffectSystem.createDust(player.x + player.w/2, footY, coreColor); 
+                AudioSystem.playSound(150, 0.1, 'square', 0.03); 
+            }
+
+            // 비트 싱크 점프 연동 스코어 보너스 메카닉 발동
+            const sync = this.checkBeatSync();
+            if (sync) {
+                game.bonusScore += sync.bonus;
+                EffectSystem.spawnFloatingText(`${sync.rating}! +${sync.bonus}`, player.x + player.w/2 + world.scrollX, player.y - 45, sync.color);
+                AudioSystem.playSound(1350, 0.08, 'sine', 0.05); // 싱크 타격 성공 하이피치 Chime 재생
+            }
         },
         activateFlight() {
             const alreadyFlying = player.isFlying;
@@ -1520,7 +1586,9 @@
             if (input.jumpBuffer > 0) input.jumpBuffer -= dt;
 
             if (player.isFlying) {
-                player.flightTime -= dt;
+                // [UFO 스킨 특성] UFO 모양 스킨은 연료 감소율이 30% 절약됩니다. (0.70x 속도로 감쇠)
+                const drainRate = playerDesign.shape === SHAPE.UFO ? 0.70 : 1.0;
+                player.flightTime -= dt * drainRate;
                 
                 if (player.flightTime <= 0) { 
                     this.deactivateFlight(false);
@@ -1569,6 +1637,12 @@
                 else player.vy = Math.min(player.vy, CONFIG.maxFallSpeed);
             } else {
                 player.vy += (player.gravityFlipped ? -CONFIG.gravity : CONFIG.gravity) * dt;
+
+                // [Diamond 스킨 특성] 하강할 때 더욱 빠르고 정확하게 급강하하여 뛰어난 조작감을 부여합니다.
+                if (playerDesign.shape === SHAPE.DIAMOND && !player.gravityFlipped && player.vy > 0) {
+                    player.vy += CONFIG.gravity * 0.15 * dt;
+                }
+
                 if (!player.gravityFlipped) player.vy = Math.min(player.vy, CONFIG.maxFallSpeed);
                 else player.vy = Math.max(player.vy, -CONFIG.maxFallSpeed);
             }
@@ -1601,6 +1675,9 @@
                 return;
             }
 
+            // [Cross 스킨 특성] 낙사 보정 낙하 딜레이(coyote Time)를 50% 추가 적용해 낙사 위기 복구를 돕습니다.
+            const currentCoyoteMax = playerDesign.shape === SHAPE.CROSS ? CONFIG.coyoteTime * 1.5 : CONFIG.coyoteTime;
+
             if (!player.gravityFlipped) {
                 if (player.y >= floorY) {
                     player.y = floorY;
@@ -1608,7 +1685,7 @@
                         if (player.isFlying) this.deactivateFlight(true);
                         player.vy = 0;
                         player.grounded = true;
-                        player.coyote = CONFIG.coyoteTime;
+                        player.coyote = currentCoyoteMax;
                         player.jumps = 0;
                     }
                 }
@@ -1620,7 +1697,7 @@
                         if (player.isFlying) this.deactivateFlight(true);
                         player.vy = 0;
                         player.grounded = true;
-                        player.coyote = CONFIG.coyoteTime;
+                        player.coyote = currentCoyoteMax;
                         player.jumps = 0;
                     }
                 }
@@ -1655,9 +1732,7 @@
             return hit;
         },
         resolveCollisions(dt) {
-            // 충돌 판정은 반드시 '아이템/상태 변경 → 착지 → 파괴 가능 오브젝트 → 사망 판정' 순서로 처리합니다.
-            // 이렇게 나누면 같은 프레임에 아이템을 먹고 바로 죽는 억까 판정을 크게 줄일 수 있습니다.
-            this.resolveCollectibles(this.getPlayerHitbox());
+            this.resolveCollectibles(this.getPlayerHitbox(), dt);
             this.resolvePlatforms(this.getPlayerHitbox(), dt);
             this.resolveBreakables(this.getPlayerHitbox());
             if (game.state !== GAME_STATE.PLAYING) return;
@@ -1675,7 +1750,6 @@
         },
         getCircleItemHitbox(ob, padding = 35) {
             const sx = ob.x - world.scrollX;
-            // STAR는 r이 없고 w/h만 있으므로 w를 반지름으로 사용
             const radius = ob.r || (ob.w / 2);
             return { x: sx - radius - padding, y: ob.y - radius - padding, w: radius * 2 + padding * 2, h: radius * 2 + padding * 2 };
         },
@@ -1683,26 +1757,46 @@
             const sx = ob.x - world.scrollX;
             return { x: sx - 15, y: ob.y - 15, w: ob.w + 30, h: ob.h + 30 };
         },
-        resolveCollectibles(pRect) {
+        resolveCollectibles(pRect, dt) {
             let abilityUsedThisFrame = false;
             for (const ob of world.obstacles) {
                 if (!this.isObstacleNearScreen(ob, 100)) continue;
                 const sx = ob.x - world.scrollX;
 
                 if (ob.type === OBSTACLE_TYPE.STAR && !ob.collected) {
+                    // [Square 스킨 특성] Square 형태 스킨은 주변 220px 내의 별들을 강력한 전자기 자석처럼 끌어당깁니다.
+                    if (playerDesign.shape === SHAPE.SQUARE) {
+                        const dist = Math.hypot((ob.x - world.scrollX) - player.x, ob.y - player.y);
+                        if (dist < 220) {
+                            const pullSpeed = 420 * dt;
+                            const dx = (player.x + world.scrollX) - ob.x;
+                            const dy = player.y - ob.y;
+                            const angle = Math.atan2(dy, dx);
+                            ob.x += Math.cos(angle) * pullSpeed * 2;
+                            ob.y += Math.sin(angle) * pullSpeed * 2;
+                        }
+                    }
+
                     const hitbox = this.getCircleItemHitbox(ob, 25);
                     if (this.checkRectCollision(pRect, hitbox)) {
                         ob.collected = true;
                         game.stars++;
-                        AudioSystem.playSound(900, 0.1, 'sine', 0.1);
-                        EffectSystem.createRing(sx + ob.w / 2, ob.y + ob.h / 2, '#ffea00');
+                        
                         game.starCombo++;
                         game.comboTimer = 2.0;
                         game.comboUITimer = 0.8;
                         UIService.showCombo(game.starCombo);
-                        // 별 수집 시 점수: 기본 500점 + 콤보 보너스
-                        const starScore = 500 + (game.starCombo * 100);
+
+                        // [Pentagon 스킨 특성] 콤보 보너스 획득량이 2배(콤보당 +200점)로 증가하여 다량 점수 획득에 크게 유리합니다.
+                        const singleComboBonus = playerDesign.shape === SHAPE.PENTAGON ? 200 : 100;
+                        const starScore = 500 + (game.starCombo * singleComboBonus);
                         game.bonusScore += starScore;
+
+                        // [인터랙티브 사운드 디자인] 별 획득 시 콤보 누적에 맞춰 정밀한 C 마이너 펜타토닉 음계가 청량하게 즉흥 연주됩니다.
+                        const scaleIndex = game.starCombo % MELODIC_SCALE.length;
+                        AudioSystem.playSound(MELODIC_SCALE[scaleIndex], 0.15, 'sine', 0.08);
+
+                        EffectSystem.createRing(sx + ob.w / 2, ob.y + ob.h / 2, '#ffea00');
                         EffectSystem.spawnFloatingText(`+${starScore}`, player.x + player.w / 2 + world.scrollX, player.y - 30, '#ffea00');
                     }
                     continue;
@@ -1715,21 +1809,25 @@
                         ob.used = true;
                         abilityUsedThisFrame = true;
                         player.isDashing = true;
-                        player.dashTime = 0.55;
+
+                        // [Circle 스킨 특성] Circle 형태 스킨은 대시 지속 시간을 0.1초 연장합니다. (0.65초로 증가)
+                        player.dashTime = playerDesign.shape === SHAPE.CIRCLE ? 0.65 : 0.55;
+
                         player.vy = 0;
                         player.jumps = 1;
                         player.grounded = false;
-                        // 대시 시작 프레임의 억까 사망 방지용 짧은 무적
                         player.isInvincible = true;
                         player.invincibleTime = Math.max(player.invincibleTime, 0.18);
                         EffectSystem.createExplosion(sx, ob.y, '#ff0055');
                         EffectSystem.triggerShake(10, 0.2);
-                        AudioSystem.playSound(400, 0.2, 'sawtooth', 0.05);
+
+                        // [인터랙티브 사운드 디자인] Orb Dash 획득 시 아름답고 강력한 파워 5도 화음(Chord)을 재생합니다.
+                        AudioSystem.playSound(523.25, 0.25, 'triangle', 0.06); // C5
+                        AudioSystem.playSound(783.99, 0.25, 'triangle', 0.04); // G5
                     }
                     continue;
                 }
 
-                // ORB: 점프 버퍼 없이도 충돌 시 더블 점프 발동
                 if (ob.type === OBSTACLE_TYPE.ORB && !ob.used) {
                     if (abilityUsedThisFrame || player.isFlying) continue;
                     const hitboxOrb = this.getCircleItemHitbox(ob, 30);
@@ -1740,7 +1838,10 @@
                         this.doJump(true);
                         EffectSystem.createExplosion(sx, ob.y, '#ffea00');
                         EffectSystem.triggerShake(5, 0.1);
-                        AudioSystem.playSound(600, 0.15, 'triangle', 0.05);
+
+                        // [인터랙티브 사운드 디자인] 일반 더블점프 점프대 Orb 충돌 시 화성학적인 5도 코드 화음을 재생합니다.
+                        AudioSystem.playSound(329.63, 0.20, 'triangle', 0.06); // E4
+                        AudioSystem.playSound(493.88, 0.20, 'triangle', 0.04); // B4
                     }
                     continue;
                 }
@@ -1752,7 +1853,6 @@
                         ob.used = true;
                         abilityUsedThisFrame = true;
                         player.gravityFlipped = (ob.dir === 'up');
-                        // 기존 1.5배는 너무 강해서 패턴 안정성이 떨어져 1.15배로 완화
                         player.vy = player.gravityFlipped ? -CONFIG.jumpForce * 1.15 : CONFIG.jumpForce * 1.15;
                         player.isInvincible = true;
                         player.invincibleTime = 1.2;
@@ -1783,12 +1883,11 @@
             for (const ob of world.obstacles) {
                 if (![OBSTACLE_TYPE.PLATFORM, OBSTACLE_TYPE.BLOCK, OBSTACLE_TYPE.TRAPEZOID].includes(ob.type)) continue;
                 if (!this.isObstacleNearScreen(ob, 100)) continue;
-
-                // 비행 모드에서는 PLATFORM/BLOCK/TRAPEZOID 착지 처리 건너뛰기
-                // (이동 가능한 장애물이므로 통과하거나 충돌死亡적 처리만 함)
                 if (player.isFlying) continue;
 
                 const sx = ob.x - world.scrollX;
+                const currentCoyoteMax = playerDesign.shape === SHAPE.CROSS ? CONFIG.coyoteTime * 1.5 : CONFIG.coyoteTime;
+
                 if (!player.gravityFlipped) {
                     const prevBottom = player.y - player.vy * dt + player.h;
                     const hasHorizontalOverlap = player.x + player.w > sx - 10 && player.x < sx + ob.w + 10;
@@ -1797,7 +1896,7 @@
                         player.y = ob.y - player.h;
                         player.vy = 0;
                         player.grounded = true;
-                        player.coyote = CONFIG.coyoteTime;
+                        player.coyote = currentCoyoteMax;
                         player.jumps = 0;
                     }
                 } else {
@@ -1808,7 +1907,7 @@
                         player.y = ob.y + ob.h;
                         player.vy = 0;
                         player.grounded = true;
-                        player.coyote = CONFIG.coyoteTime;
+                        player.coyote = currentCoyoteMax;
                         player.jumps = 0;
                     }
                 }
@@ -1833,6 +1932,19 @@
                 } else if (player.isInvincible) {
                     continue;
                 } else {
+                    // [Hexagon 스킨 특성] 실드가 채워져 있는 Hexagon 외형인 경우, 사망을 막고 유리 장벽을 파괴한 후 1.5초간 완벽한 하이퍼 실드 무적을 얻습니다.
+                    if (playerDesign.shape === SHAPE.HEXAGON && player.shieldActive) {
+                        player.shieldActive = false;
+                        player.isInvincible = true;
+                        player.invincibleTime = 1.5;
+                        ob.destroyed = true;
+                        EffectSystem.createGlassShatter(sx, ob.y);
+                        EffectSystem.spawnFloatingText('🛡️ SHIELD BROKEN!', player.x + player.w/2 + world.scrollX, player.y - 30, '#39ff14');
+                        AudioSystem.playSound(350, 0.4, 'sawtooth', 0.1);
+                        EffectSystem.triggerShake(15, 0.35);
+                        continue;
+                    }
+
                     ob.fatalHit = true;
                     game.hitStop = 0.1;
                     game.deathCause = '유리 장벽';
@@ -1843,17 +1955,26 @@
         },
         resolveFatalObstacles(pRect) {
             const fatalObstacles = [OBSTACLE_TYPE.SPIKE, OBSTACLE_TYPE.SPIKE_DOWN, OBSTACLE_TYPE.BLOCK, OBSTACLE_TYPE.TRAPEZOID, OBSTACLE_TYPE.RHOMBUS];
-            // 비행 모드에서는 PLATFORM도 치명적 장애물이 되지만, 이미 resolvePlatforms에서 처리됨
-            // 따라서 fatalObstacles에 추가하지 않고 별도 처리
 
             for (const ob of world.obstacles) {
-                // 비행 모드에서 PLATFORM 충돌 시 사망 처리 (착지하지 않은 경우)
                 if (player.isFlying && ob.type === OBSTACLE_TYPE.PLATFORM) {
                     if (!this.isObstacleNearScreen(ob, 100)) continue;
                     const sx = ob.x - world.scrollX;
                     const hitbox = this.getHitbox(ob, sx);
                     if (!this.checkRectCollision(pRect, hitbox)) continue;
                     if (player.isInvincible) continue;
+
+                    // [Hexagon 스킨 특성] FLY 도중의 플랫폼 충돌 시에도 실드로 보호받습니다.
+                    if (playerDesign.shape === SHAPE.HEXAGON && player.shieldActive) {
+                        player.shieldActive = false;
+                        player.isInvincible = true;
+                        player.invincibleTime = 1.5;
+                        EffectSystem.spawnFloatingText('🛡️ SHIELD BROKEN!', player.x + player.w/2 + world.scrollX, player.y - 30, '#39ff14');
+                        AudioSystem.playSound(350, 0.4, 'sawtooth', 0.1);
+                        EffectSystem.triggerShake(15, 0.35);
+                        continue;
+                    }
+
                     ob.fatalHit = true;
                     game.hitStop = 0.1;
                     game.deathCause = '플랫폼 충돌';
@@ -1869,6 +1990,18 @@
                 if (!this.checkRectCollision(pRect, hitbox)) continue;
 
                 if (player.isInvincible) continue;
+
+                // [Hexagon 스킨 특성] 가시 및 블록 충돌 시 최초 1회 즉시 무적 보호막 발동 및 서바이벌 처리
+                if (playerDesign.shape === SHAPE.HEXAGON && player.shieldActive) {
+                    player.shieldActive = false;
+                    player.isInvincible = true;
+                    player.invincibleTime = 1.5;
+                    EffectSystem.spawnFloatingText('🛡️ SHIELD BROKEN!', player.x + player.w/2 + world.scrollX, player.y - 30, '#39ff14');
+                    AudioSystem.playSound(350, 0.4, 'sawtooth', 0.1);
+                    EffectSystem.triggerShake(15, 0.35);
+                    continue;
+                }
+
                 ob.fatalHit = true;
                 game.hitStop = 0.1;
                 game.deathCause = ob.type.includes('spike') ? '가시밭' : ob.type === OBSTACLE_TYPE.RHOMBUS ? '마름모 함정' : '거대 구조물';
@@ -1897,7 +2030,6 @@
                 const maxTrail = Math.floor(18 + speedRatio * 34 + (player.isDashing ? 16 : 0));
 
                 if (Math.random() < spawnChance) {
-                  // 수직 고정을 피하기 위해, 잔상이 스폰될 때의 월드 절대좌표(x + scrollX)를 저장합니다.
                   player.trail.push({ x: player.x + world.scrollX, y: player.y, rot: player.rotation, life: trailLife, maxLife: trailLife, color: currentColor });
                 }
                 for (let i = player.trail.length - 1; i >= 0; i--) {
@@ -2043,11 +2175,18 @@
             ctxTarget.fillStyle = color; ctxTarget.fill();
         },
         drawParallaxCity() {
+            const isFever = game.starCombo >= 10;
             canvasCtx.fillStyle = '#0a0b10';
             const offset1 = world.scrollX * 0.15;
             for(let i = -1; i <= CONFIG.width / 80 + 1; i++) {
                 const globalIdx = Math.floor(offset1 / 80) + i;
-                const h = 100 + Math.sin(globalIdx * 12.34) * 80 + Math.cos(globalIdx * 4.5) * 40;
+                let h = 100 + Math.sin(globalIdx * 12.34) * 80 + Math.cos(globalIdx * 4.5) * 40;
+                
+                // [Fever Mode] 피버 모드일 때 배경의 바들이 오디오 이퀄라이저처럼 춤을 춥니다.
+                if (isFever) {
+                    h += Math.sin(Date.now() * 0.02 + globalIdx) * 18;
+                }
+
                 const w = 60 + Math.sin(globalIdx * 7.8) * 20;
                 const x = - (offset1 % 80) + i * 80;
                 canvasCtx.fillRect(x, CONFIG.groundY - h, w, h);
@@ -2059,7 +2198,12 @@
             const offset2 = world.scrollX * 0.35;
             for(let i = -1; i <= CONFIG.width / 150 + 1; i++) {
                 const globalIdx = Math.floor(offset2 / 150) + i;
-                const h = 50 + Math.abs(Math.sin(globalIdx * 8.1)) * 120;
+                let h = 50 + Math.abs(Math.sin(globalIdx * 8.1)) * 120;
+                
+                if (isFever) {
+                    h += Math.cos(Date.now() * 0.015 + globalIdx) * 25;
+                }
+
                 const w = 80;
                 const x = - (offset2 % 150) + i * 150;
                 canvasCtx.fillRect(x, CONFIG.groundY - h, w, h);
@@ -2084,9 +2228,14 @@
             canvasCtx.save(); canvasCtx.translate(0, CONFIG.groundY);
             canvasCtx.strokeStyle = world.gridColor; canvasCtx.lineWidth = 2 * world.pulse;
             
+            const isFever = game.starCombo >= 10;
             const gridOffsetY = -(world.scrollX * 0.5) % 40;
             for (let i = 0; i < 15; i++) {
-                const y = i * i * 1.5 + gridOffsetY; 
+                let y = i * i * 1.5 + gridOffsetY; 
+                // [Fever Mode] 격자선 바닥 왜곡 연출 추가 (사인파 바닥 일렁임)
+                if (isFever) {
+                    y += Math.sin(world.scrollX * 0.005 + i) * 8;
+                }
                 if (y > 0 && y < CONFIG.height - CONFIG.groundY) {
                     canvasCtx.beginPath(); canvasCtx.moveTo(0, y); canvasCtx.lineTo(CONFIG.width, y); canvasCtx.stroke();
                 }
@@ -2114,6 +2263,33 @@
             canvasCtx.fillRect(0, CONFIG.ceilY - 2, CONFIG.width, 3); 
             
             canvasCtx.shadowBlur = 0;
+
+            // [인게임 최고 기록 가이드라인] 황금색 레이저 빔 및 텍스트 마커 렌더링
+            if (game.bestScore > 0) {
+                const bestX = game.bestScore * 10;
+                const rx = bestX - world.scrollX;
+                if (rx > -100 && rx < CONFIG.width + 100) {
+                    canvasCtx.save();
+                    canvasCtx.shadowColor = '#ffea00';
+                    canvasCtx.shadowBlur = 15;
+                    canvasCtx.strokeStyle = '#ffea00';
+                    canvasCtx.lineWidth = 3;
+                    canvasCtx.setLineDash([12, 8]); // 사이버틱 파선 스타일
+                    canvasCtx.beginPath();
+                    canvasCtx.moveTo(rx, CONFIG.ceilY);
+                    canvasCtx.lineTo(rx, CONFIG.groundY);
+                    canvasCtx.stroke();
+
+                    // 최고 기록 한글/영문 홀로그램 텍스트 드로잉
+                    canvasCtx.fillStyle = '#ffea00';
+                    canvasCtx.shadowBlur = 5;
+                    canvasCtx.font = '800 12px Outfit';
+                    canvasCtx.textAlign = 'center';
+                    canvasCtx.fillText('🏆 MY BEST RECORD', rx, CONFIG.ceilY + 25);
+                    canvasCtx.fillText('🏆 MY BEST RECORD', rx, CONFIG.groundY - 15);
+                    canvasCtx.restore();
+                }
+            }
         },
         drawFloatingTexts() {
             world.floatingTexts.forEach(ft => {
@@ -2281,7 +2457,6 @@
         drawPlayer() {
             player.trail.forEach(t => {
                 canvasCtx.save();
-                // 절대 월드 좌표로 저장된 잔상에서 현재 scrollX를 차감하여 올바른 화면 좌표로 변환합니다.
                 const screenX = t.x - world.scrollX;
                 canvasCtx.translate(screenX + player.w/2, t.y + player.h/2);
                 if (player.gravityFlipped || player.flightInverted) canvasCtx.scale(1, -1);
@@ -2298,24 +2473,84 @@
             canvasCtx.save();
             canvasCtx.translate(player.x + player.w/2, player.y + player.h/2);
             
-            if (player.isInvincible) {
+            // [개선된 SF 홀로그램 보호막 왜곡 구체 돔]
+            // 무적이거나, 헥사곤 스킨 고유 보호막이 활성화된 상태일 때 입체 홀로그램 보호막을 렌더링합니다.
+            const showShield = player.isInvincible || (playerDesign.shape === SHAPE.HEXAGON && player.shieldActive && game.state === GAME_STATE.PLAYING);
+            if (showShield) {
                 canvasCtx.save();
-                const radius = 34; 
+                const radius = 42; 
+                const time = Date.now() * 0.003;
+                
                 let alpha = 1;
-                if (player.invincibleTime < 0.5) {
+                // 무적 시간이 얼마 남지 않았을 때 깜빡이는 경고 효과
+                if (player.isInvincible && player.invincibleTime < 0.5) {
                     alpha = (Math.sin(Date.now() / 40) + 1) / 2; 
                 }
                 
+                // 1. 네온 글로우 오라 및 내부 3D 구체 깊이감 피드백 그라데이션
+                canvasCtx.shadowColor = '#0ff';
+                canvasCtx.shadowBlur = 18 * world.pulse;
+                
+                const grad = canvasCtx.createRadialGradient(0, 0, radius * 0.4, 0, 0, radius);
+                grad.addColorStop(0, 'rgba(0, 255, 255, 0.0)');
+                grad.addColorStop(0.7, 'rgba(0, 255, 255, 0.15)');
+                grad.addColorStop(0.9, 'rgba(0, 255, 255, 0.45)');
+                grad.addColorStop(1.0, 'rgba(0, 255, 255, 0.95)');
+                
+                canvasCtx.fillStyle = grad;
+                canvasCtx.globalAlpha = alpha;
                 canvasCtx.beginPath();
                 canvasCtx.arc(0, 0, radius, 0, Math.PI * 2);
-                canvasCtx.lineWidth = 3;
-                canvasCtx.strokeStyle = `rgba(0, 255, 255, ${alpha})`; 
-                canvasCtx.shadowColor = `rgba(0, 255, 255, ${alpha})`;
-                canvasCtx.shadowBlur = 15;
-                canvasCtx.stroke();
-                
-                canvasCtx.fillStyle = `rgba(0, 255, 255, ${alpha * 0.15})`;
                 canvasCtx.fill();
+                
+                // 2. 디스토션 확산 리플 (바깥 방향으로 퍼져나가는 에너지 파동 파형)
+                canvasCtx.shadowBlur = 0; 
+                const rippleCount = 2;
+                for (let i = 0; i < rippleCount; i++) {
+                    const rippleProgress = ((time * 0.4 + i / rippleCount) % 1.0);
+                    const rRadius = radius * rippleProgress;
+                    canvasCtx.strokeStyle = `rgba(0, 255, 255, ${(1.0 - rippleProgress) * 0.5 * alpha})`;
+                    canvasCtx.lineWidth = 1.5;
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(0, 0, rRadius, 0, Math.PI * 2);
+                    canvasCtx.stroke();
+                }
+
+                // 3. 미래지향적 홀로그램 6각 그리드 패턴 (보호막 표면 텍스처 왜곡감 부여)
+                canvasCtx.strokeStyle = `rgba(0, 255, 255, ${0.2 * alpha})`;
+                canvasCtx.lineWidth = 1;
+                const hexSize = 10;
+                for (let x = -radius; x <= radius; x += hexSize * 1.5) {
+                    for (let y = -radius; y <= radius; y += hexSize * Math.sqrt(3)) {
+                        const distance = Math.hypot(x, y);
+                        // 실드 원 반경 내부에만 입체감 있게 메쉬 제한
+                        if (distance < radius - 3) {
+                            canvasCtx.beginPath();
+                            for (let side = 0; side < 6; side++) {
+                                const angle = side * Math.PI / 3 + (time * 0.1); // 서서히 회전하는 홀로그램 구조체
+                                const hx = x + hexSize * 0.5 * Math.cos(angle);
+                                const hy = y + hexSize * 0.5 * Math.sin(angle);
+                                if (side === 0) canvasCtx.moveTo(hx, hy);
+                                else canvasCtx.lineTo(hx, hy);
+                            }
+                            canvasCtx.closePath();
+                            canvasCtx.stroke();
+                        }
+                    }
+                }
+
+                // 4. 플라즈마 에너지 스파크 (테두리를 휘감는 전자기 전류 아크 연출)
+                canvasCtx.strokeStyle = `rgba(255, 255, 255, ${0.85 * alpha})`;
+                canvasCtx.lineWidth = 2.5;
+                const arcCount = 3;
+                for (let i = 0; i < arcCount; i++) {
+                    const startAngle = time * 2.5 + (i * Math.PI * 2 / arcCount);
+                    const arcLength = 0.4 + Math.sin(time + i) * 0.15;
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(0, 0, radius, startAngle, startAngle + arcLength);
+                    canvasCtx.stroke();
+                }
+                
                 canvasCtx.restore();
             }
 
@@ -2446,13 +2681,29 @@
             canvasCtx.restore();
         },
         renderMain() {
+            // 1. 카메라 연산 전에 원본 1:1 행렬로 캔버스 전체 물리적 면적을 딥 네온 배경색으로 초기화 (측면 노이즈 해결)
             canvasCtx.save();
+            canvasCtx.setTransform(1, 0, 0, 1, 0, 0); 
+            canvasCtx.fillStyle = '#050508'; 
+            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+            canvasCtx.restore();
+
+            // 2. 가상 카메라 뷰포트 공간 생성 후 셰이크/카메라 줌 적용
+            canvasCtx.save();
+            
+            // 일반 셰이크 연산
             if (game.shakeTime > 0) {
                 const dx = (Math.random() - 0.5) * game.shakeMag; const dy = (Math.random() - 0.5) * game.shakeMag;
                 canvasCtx.translate(dx, dy);
             }
 
-            canvasCtx.clearRect(0, 0, CONFIG.width, CONFIG.height);
+            // [VFX 카메라 줌 연출] 월드 카메라 스케일을 중앙 기점으로 적용시킵니다.
+            if (world.cameraScale !== 1.0) {
+                canvasCtx.translate(CONFIG.width / 2, CONFIG.height / 2);
+                canvasCtx.scale(world.cameraScale, world.cameraScale);
+                canvasCtx.translate(-CONFIG.width / 2, -CONFIG.height / 2);
+            }
+
             this.drawBackground(); 
             this.drawGround(); 
             this.drawObstacles(); 
@@ -2473,6 +2724,20 @@
             
             canvasCtx.restore(); 
             this.drawStateTint();
+
+            // [VHS Glitch 사망 연출] 충돌 후 0.25초 동안 화면 chromatic aberration 효과 인가
+            if (game.glitchTimer > 0) {
+                const offsetShift = (Math.random() - 0.5) * 22;
+                canvasCtx.save();
+                canvasCtx.translate(offsetShift, 0);
+                if (Math.random() < 0.45) {
+                    canvasCtx.fillStyle = 'rgba(255, 0, 85, 0.3)';
+                    canvasCtx.fillRect(0, Math.random() * CONFIG.height, CONFIG.width, Math.random() * 35 + 8);
+                    canvasCtx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+                    canvasCtx.fillRect(0, Math.random() * CONFIG.height, CONFIG.width, Math.random() * 35 + 8);
+                }
+                canvasCtx.restore();
+            }
 
             if (game.state === GAME_STATE.PAUSED) {
                 canvasCtx.fillStyle = 'rgba(0,0,0,0.7)'; canvasCtx.fillRect(0, 0, CONFIG.width, CONFIG.height);
@@ -2534,6 +2799,7 @@
         game.state = GAME_STATE.DEAD;
         game.timer = CONFIG.deathDelay;
         game.flash = 1;
+        game.glitchTimer = 0.25; // 0.25초 동안 비디오 글리치 렌더 가동
         
         BGMSystem.stop();
         AudioSystem.stopFlightSound();
@@ -2607,7 +2873,10 @@
             EffectSystem.triggerShake(12, 0.4); 
         }
 
-        if (game.score >= 5000 && player.jumpLevel < 3) {
+        // [Triangle 스킨 특성] 트리플 점프 언락 조건 점수를 4,000점으로 대폭 낮춰 플레이 안정성을 향상시킵니다.
+        const requiredJumpUnlockScore = playerDesign.shape === SHAPE.TRIANGLE ? 4000 : 5000;
+
+        if (game.score >= requiredJumpUnlockScore && player.jumpLevel < 3) {
             player.jumpLevel = 3; player.maxJumps = 3;
             UIService.updateJump(3, '#ff0055');
             EffectSystem.createExplosion(player.x, player.y, '#ff0055');
@@ -2665,6 +2934,18 @@
           PhysicsSystem.updateTrail(effDt);
           
           if (game.state === GAME_STATE.PLAYING) checkLevelProgress();
+
+          // [VFX 카메라 줌스케일 연산] 플레이 속도 및 특수 모드에 따라 줌아웃 가중치 스무스 보간
+          let scaleOffset = 0;
+          if (player.isDashing) {
+              scaleOffset = 0.08;
+          } else if (player.isFlying) {
+              scaleOffset = 0.05;
+          } else {
+              scaleOffset = ((world.speed - CONFIG.baseSpeed) / (CONFIG.maxSpeed - CONFIG.baseSpeed)) * 0.06;
+          }
+          world.targetCameraScale = 1.0 - scaleOffset;
+          world.cameraScale += (world.targetCameraScale - world.cameraScale) * 5 * effDt;
         } 
         
         if (game.state === GAME_STATE.DEAD || game.state === GAME_STATE.CLEAR) {
@@ -2681,8 +2962,6 @@
         input.jumpBuffer = 0.15;
         AudioSystem.tryUnlock();
 
-        // 로비에서는 빈 화면 터치/스페이스로 바로 시작하지 않습니다.
-        // 모바일에서 닉네임/스킨 조작 중 의도치 않게 게임이 시작되는 문제 방지.
         if (game.state === GAME_STATE.SETUP) return;
 
         if ((game.state === GAME_STATE.DEAD || game.state === GAME_STATE.CLEAR) && game.timer <= -0.5) { 
@@ -2718,9 +2997,8 @@
 
         const pOpts = { passive: false };
 
-        // 모바일 터치 반응성 극대화 (pointerdown 보다 빠른 touchstart 우선 처리)
         window.addEventListener('touchstart', (e) => {
-            AudioSystem.tryUnlock(); // 가장 먼저 오디오 권한 획득 시도
+            AudioSystem.tryUnlock(); 
             if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
             e.preventDefault(); window.focus(); handlePress(); 
         }, pOpts);
@@ -2729,10 +3007,9 @@
             e.preventDefault(); handleRelease(); 
         }, pOpts);
 
-        // PC 마우스 환경
         window.addEventListener('pointerdown', (e) => {
-            AudioSystem.tryUnlock(); // 마우스 환경에서도 최우선으로 오디오 권한 획득
-            if (e.pointerType === 'touch') return; // 모바일은 touchstart에서 이미 처리함
+            AudioSystem.tryUnlock(); 
+            if (e.pointerType === 'touch') return; 
             if (['BUTTON', 'INPUT', 'LABEL', 'SELECT', 'OPTION'].includes(e.target.tagName)) return;
             e.preventDefault(); window.focus(); handlePress(); 
         }, pOpts);
