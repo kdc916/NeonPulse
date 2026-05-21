@@ -1785,7 +1785,7 @@
                 if (!this.isObstacleNearScreen(ob, 100)) continue;
 
                 // 비행 모드에서는 PLATFORM/BLOCK/TRAPEZOID 착지 처리 건너뛰기
-                // (이동 가능한 장애물이므로 통과하거나 충돌死亡的 처리만 함)
+                // (이동 가능한 장애물이므로 통과하거나 충돌死亡적 처리만 함)
                 if (player.isFlying) continue;
 
                 const sx = ob.x - world.scrollX;
@@ -1897,7 +1897,8 @@
                 const maxTrail = Math.floor(18 + speedRatio * 34 + (player.isDashing ? 16 : 0));
 
                 if (Math.random() < spawnChance) {
-                  player.trail.push({ x: player.x, y: player.y, rot: player.rotation, life: trailLife, maxLife: trailLife, color: currentColor });
+                  // 수직 고정을 피하기 위해, 잔상이 스폰될 때의 월드 절대좌표(x + scrollX)를 저장합니다.
+                  player.trail.push({ x: player.x + world.scrollX, y: player.y, rot: player.rotation, life: trailLife, maxLife: trailLife, color: currentColor });
                 }
                 for (let i = player.trail.length - 1; i >= 0; i--) {
                   player.trail[i].life -= dt;
@@ -2280,7 +2281,9 @@
         drawPlayer() {
             player.trail.forEach(t => {
                 canvasCtx.save();
-                canvasCtx.translate(t.x + player.w/2, t.y + player.h/2);
+                // 절대 월드 좌표로 저장된 잔상에서 현재 scrollX를 차감하여 올바른 화면 좌표로 변환합니다.
+                const screenX = t.x - world.scrollX;
+                canvasCtx.translate(screenX + player.w/2, t.y + player.h/2);
                 if (player.gravityFlipped || player.flightInverted) canvasCtx.scale(1, -1);
                 canvasCtx.rotate(t.rot);
                 
